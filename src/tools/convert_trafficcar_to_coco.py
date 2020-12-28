@@ -6,7 +6,7 @@ import pickle
 import json
 import numpy as np
 import cv2
-DATA_PATH = '../../data/kitti/'
+DATASET_PATH = '../../data/traffic_car/'
 DEBUG = False
 # VAL_PATH = DATA_PATH + 'training/label_val/'
 import os
@@ -40,16 +40,32 @@ def _bbox_to_coco_bbox(bbox):
   return [(bbox[0]), (bbox[1]),
           (bbox[2] - bbox[0]), (bbox[3] - bbox[1])]
 
-def read_clib(calib_path):
+def _rot_y2alpha(rot_y, x, cx, fx):
+    """
+    Get rotation_y by alpha + theta - 180
+    alpha : Observation angle of object, ranging [-pi..pi]
+    x : Object center x to the camera center (x-W/2), in pixels
+    rotation_y : Rotation ry around Y-axis in camera coordinates [-pi..pi]
+    """
+    alpha = rot_y - np.arctan2(x - cx, fx)
+    if alpha > np.pi:
+      alpha -= 2 * np.pi
+    if alpha < -np.pi:
+      alpha += 2 * np.pi
+    return alpha
+
+def read_clib(calib_path): #change 3x3 to 3x4
   f = open(calib_path, 'r')
   for i, line in enumerate(f):
-    if i == 2:
+    if i == 0:
       calib = np.array(line[:-1].split(' ')[1:], dtype=np.float32)
-      calib = calib.reshape(3, 4)
+      calib = calib.reshape(3, 3)
+      calib = np.concatenate([calib,np.zeros((3,1),dtype=np.float32)],axis=1)
       return calib
 
-cats = ['Pedestrian', 'Car', 'Cyclist', 'Van', 'Truck',  'Person_sitting',
-        'Tram', 'Misc', 'DontCare']
+# cats = ['Pedestrian', 'Car', 'Cyclist', 'Van', 'Truck',  'Person_sitting',
+#         'Tram', 'Misc', 'DontCare']
+cats = ['Car','DontCare']
 cat_ids = {cat: i + 1 for i, cat in enumerate(cats)}
 # cat_info = [{"name": "pedestrian", "id": 1}, {"name": "vehicle", "id": 2}]
 F = 721
@@ -59,29 +75,38 @@ EXT = [45.75, -0.34, 0.005]
 CALIB = np.array([[F, 0, W / 2, EXT[0]], [0, F, H / 2, EXT[1]], 
                   [0, 0, 1, EXT[2]]], dtype=np.float32)
 
+#一个cam共10000张图，选8000张训练，1000张验证，1000张测试
+TRAIN_NUM = 8000
+VAL_NUM = 1000
+TEST_NUM = 1000
+TRAIN_SETS = ['cam1','cam2','cam3','cam4','cam5','cam6']
+TEST_SETS = ['cam7']
+IMG_H = 540
+IMG_W = 960
+
 cat_info = []
 for i, cat in enumerate(cats):
   cat_info.append({'name': cat, 'id': i + 1})
 
-for SPLIT in SPLITS:
-  image_set_path = DATA_PATH + 'ImageSets_{}/'.format(SPLIT)
-  ann_dir = DATA_PATH + 'training/label_2/'
-  calib_dir = DATA_PATH + '{}/calib/'
-  splits = ['train', 'val']
+for CAM in TRAIN_SETS:
+  DATA_PATH = DATASET_PATH + '{}/'.format(CAM)
+  image_set_path = DATA_PATH + 'image_2/'
+  ann_dir = DATA_PATH + 'label_2/'
+  calib_dir = DATA_PATH + 'calib/'
   # splits = ['trainval', 'test']
-  calib_type = {'train': 'training', 'val': 'training', 'trainval': 'training',
-                'test': 'testing'}
+  calib_path = calib_dir + '000000.txt'
+  calib = read_clib(calib_path)
 
+  splits = {'train':TRAIN_NUM, 'val':VAL_NUM,'test':TEST_NUM}
   for split in splits:
     ret = {'images': [], 'annotations': [], "categories": cat_info}
-    image_set = open(image_set_path + '{}.txt'.format(split), 'r')
+    image_set = [str(i).rjust(6,'0') for i in range(1,splits[split]+1)]
+    #image_set = open(image_set_path + '{}.txt'.format(split), 'r')
     image_to_id = {}
     for line in image_set:
-      if line[-1] == '\n':
-        line = line[:-1]
       image_id = int(line)
-      calib_path = calib_dir.format(calib_type[split]) + '{}.txt'.format(line)
-      calib = read_clib(calib_path)
+      
+      
       image_info = {'file_name': '{}.png'.format(line),
                     'id': int(image_id),
                     'calib': calib.tolist()}
@@ -107,6 +132,21 @@ for SPLIT in SPLITS:
         dim = [float(tmp[8]), float(tmp[9]), float(tmp[10])]
         location = [float(tmp[11]), float(tmp[12]), float(tmp[13])]
         rotation_y = float(tmp[14])
+
+        #由于label中存在没有在图像像素范围内的框，因此当投影到图片上的3D框顶点超出个数大于6则忽略这个标签
+        box_3d = compute_box_3d(dim, location, rotation_y)
+        img_size = np.asarray([IMG_W,IMG_H],dtype=np.int)
+        inds = np.greater(box_3d,img_size)
+        out_num = (inds[:,0] * inds[:,1]).sum()
+        if out_num > 6:
+          continue
+
+        #根据3d框中心以及内参矩阵计算alpha,注意location是3dbox底面中心（但是只用x，所以不用计算）
+        alpha = _rot_y2alpha(yaw, location[0], 
+                                 calib[0, 2], calib[0, 0])
+        
+        #计算像素坐标系下的2dbbox，就是3dbbox每个轴最小的值组成的框。裁剪到图像上。
+
 
         ann = {'image_id': image_id,
                'id': int(len(ret['annotations']) + 1),
@@ -142,7 +182,9 @@ for SPLIT in SPLITS:
       if DEBUG:
         cv2.imshow('image', image)
         cv2.waitKey()
-
+    #1数据集文件格式
+    #2投影到图片，超出的截去
+    #3划分训练测试集
 
     print("# images: ", len(ret['images']))
     print("# annotations: ", len(ret['annotations']))

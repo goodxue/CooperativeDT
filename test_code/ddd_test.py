@@ -65,7 +65,7 @@ if __name__ == '__main__':
   calib = read_clib('.\\test_code\\000000.txt')
   anns = open('.\\test_code\\000023.txt', 'r')
   for ann_ind, txt in enumerate(anns):
-    tmp = txt[:-1].split(' ')
+    tmp = txt[:-1].split(' ') #为了去掉末尾的\n
     cat_id = cat_ids[tmp[0]]
     truncated = int(float(tmp[1]))
     occluded = int(tmp[2])
