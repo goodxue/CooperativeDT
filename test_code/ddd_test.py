@@ -47,6 +47,18 @@ def draw_box_3d(image, corners, c=(0, 0, 255)):
                (corners[f[3], 0], corners[f[3], 1]), c, 1, lineType=cv2.LINE_AA)
   return image
 
+def draw_box_2d(image, corners, c=(255,0,0)):
+  face_idx = [[0,1,2,1],
+              [2,1,2,3],
+              [2,3,1,3],
+              [1,3,0,1]]
+  for ind_f in range(4):
+    f = face_idx[ind_f]
+    cv2.line(image, (corners[f[0]],corners[f[1]]),
+                (corners[f[2]], corners[f[3]]), c, 1, lineType=cv2.LINE_AA)
+    return image
+
+
 def read_clib(calib_path):
   f = open(calib_path, 'r')
   for i, line in enumerate(f):
@@ -75,11 +87,24 @@ if __name__ == '__main__':
     location = [float(tmp[11]), float(tmp[12]), float(tmp[13])]
     rotation_y = float(tmp[14])
 
+    alpha = _rot_y2alpha(rotation_y, location[0], 
+                                 calib[0, 2], calib[0, 0])
+
+    bbox = (np.min(box_3d[:,0]), np.min(box_3d[:,1]), np.max(box_3d[:,0]), np.max(box_3d[:,1]))
+    bbox_crop = tuple(max(0, b) for b in bbox)
+    bbox_crop = (min(img_size[0], bbox_crop[0]),
+                  min(img_size[0], bbox_crop[1]),
+                  min(img_size[0], bbox_crop[2]),
+                  min(img_size[1], bbox_crop[3]))
+    # Detect if a cropped box is empty.
+    if bbox_crop[0] >= bbox_crop[2] or bbox_crop[1] >= bbox_crop[3]:
+      continue
+
     ann = {#'image_id': image_id,
             #'id': int(len(ret['annotations']) + 1),
             'category_id': cat_id,
             'dim': dim,
-            #'bbox': _bbox_to_coco_bbox(bbox),
+            'bbox': _bbox_to_coco_bbox(bbox_crop),
             'depth': location[2],
             'alpha': alpha,
             'truncated': truncated,

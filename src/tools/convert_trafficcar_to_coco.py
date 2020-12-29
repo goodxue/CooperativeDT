@@ -133,26 +133,34 @@ for CAM in TRAIN_SETS:
         location = [float(tmp[11]), float(tmp[12]), float(tmp[13])]
         rotation_y = float(tmp[14])
 
-        #由于label中存在没有在图像像素范围内的框，因此当投影到图片上的3D框顶点超出个数大于6则忽略这个标签
-        box_3d = compute_box_3d(dim, location, rotation_y)
+        # #由于label中存在没有在图像像素范围内的框，因此当投影到图片上的3D框顶点超出个数大于6则忽略这个标签
+        # box_3d = compute_box_3d(dim, location, rotation_y)
         img_size = np.asarray([IMG_W,IMG_H],dtype=np.int)
-        inds = np.greater(box_3d,img_size)
-        out_num = (inds[:,0] * inds[:,1]).sum()
-        if out_num > 6:
-          continue
+        # inds = np.greater(box_3d,img_size)
+        # out_num = (inds[:,0] * inds[:,1]).sum()
+        # if out_num > 6:
+        #   continue
 
         #根据3d框中心以及内参矩阵计算alpha,注意location是3dbox底面中心（但是只用x，所以不用计算）
-        alpha = _rot_y2alpha(yaw, location[0], 
+        alpha = _rot_y2alpha(rotation_y, location[0], 
                                  calib[0, 2], calib[0, 0])
         
         #计算像素坐标系下的2dbbox，就是3dbbox每个轴最小的值组成的框。裁剪到图像上。
-
+        bbox = (np.min(box_3d[:,0]), np.min(box_3d[:,1]), np.max(box_3d[:,0]), np.max(box_3d[:,1]))
+        bbox_crop = tuple(max(0, b) for b in bbox)
+        bbox_crop = (min(img_size[0], bbox_crop[0]),
+                     min(img_size[0], bbox_crop[1]),
+                     min(img_size[0], bbox_crop[2]),
+                     min(img_size[1], bbox_crop[3]))
+        # Detect if a cropped box is empty.
+        if bbox_crop[0] >= bbox_crop[2] or bbox_crop[1] >= bbox_crop[3]:
+          continue
 
         ann = {'image_id': image_id,
                'id': int(len(ret['annotations']) + 1),
                'category_id': cat_id,
                'dim': dim,
-               'bbox': _bbox_to_coco_bbox(bbox),
+               'bbox': _bbox_to_coco_bbox(bbox_crop),
                'depth': location[2],
                'alpha': alpha,
                'truncated': truncated,
@@ -189,6 +197,6 @@ for CAM in TRAIN_SETS:
     print("# images: ", len(ret['images']))
     print("# annotations: ", len(ret['annotations']))
     # import pdb; pdb.set_trace()
-    out_path = '{}/annotations/kitti_{}_{}.json'.format(DATA_PATH, SPLIT, split)
+    out_path = '{}/annotations/traffic_car_{}.json'.format(DATA_PATH,split)
     json.dump(ret, open(out_path, 'w'))
   
