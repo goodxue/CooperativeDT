@@ -37,8 +37,8 @@ from utils.ddd_utils import draw_box_3d, unproject_2d_to_3d, draw_box_2d
 '''
 
 def _bbox_to_coco_bbox(bbox):
-  return [(bbox[0]), (bbox[1]),
-          (bbox[2] - bbox[0]), (bbox[3] - bbox[1])]
+  return [float(bbox[0]), float(bbox[1]),
+          float(bbox[2] - bbox[0]), float(bbox[3] - bbox[1])]
 
 def _rot_y2alpha(rot_y, x, cx, fx):
     """
@@ -111,8 +111,8 @@ for CAM in TRAIN_SETS:
                     'id': int(image_id),
                     'calib': calib.tolist()}
       ret['images'].append(image_info)
-      if split == 'test':
-        continue
+      # if split == 'test':
+      #   continue
       ann_path = ann_dir + '{}.txt'.format(line)
       # if split == 'val':
       #   os.system('cp {} {}/'.format(ann_path, VAL_PATH))
@@ -163,7 +163,7 @@ for CAM in TRAIN_SETS:
                'dim': dim,
                'bbox': _bbox_to_coco_bbox(bbox_crop),
                'depth': location[2],
-               'alpha': alpha,
+               'alpha': float(alpha),
                'truncated': truncated,
                'occluded': occluded,
                'location': location,
@@ -199,6 +199,6 @@ for CAM in TRAIN_SETS:
     print("# images: ", len(ret['images']))
     print("# annotations: ", len(ret['annotations']))
     # import pdb; pdb.set_trace()
-    out_path = '{}/annotations/traffic_car_{}.json'.format(DATA_PATH,split)
+    out_path = '{}annotations/traffic_car_{}.json'.format(DATA_PATH,split)
     json.dump(ret, open(out_path, 'w'))
   
