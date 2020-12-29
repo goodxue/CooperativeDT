@@ -22,19 +22,19 @@ class KITTI(data.Dataset):
 
   def __init__(self, opt, split):
     super(KITTI, self).__init__()
-    self.data_dir = os.path.join(opt.data_dir, 'traffic_car')
-    self.img_dir = os.path.join(self.data_dir, 'images', 'trainval')
+    self.data_dir = os.path.join(opt.data_dir, 'traffic_car/{}'.format(opt.cam))
+    self.img_dir = os.path.join(self.data_dir, 'image_2')
     if opt.trainval:
-      split = 'trainval' if split == 'train' else 'test'
+      split = 'train' if split == 'train' else 'test'
       self.img_dir = os.path.join(self.data_dir, 'images', split)
       self.annot_path = os.path.join(
-        self.data_dir, 'annotations', 'kitti_{}.json').format(split)
+        self.data_dir, 'annotations', 'traffic_car_{}.json').format(split)
     else:
       self.annot_path = os.path.join(self.data_dir, 
-        'annotations', 'kitti_{}_{}.json').format(opt.kitti_split, split)
+        'annotations', 'traffic_{}.json').format(split)
     self.max_objs = 50
     self.class_name = [
-      '__background__', 'Pedestrian', 'Car', 'Cyclist']
+      '__background__', 'Car']
     self.cat_ids = {1:0, 2:1, 3:2, 4:-3, 5:-3, 6:-2, 7:-99, 8:-99, 9:-1}
     
     self._data_rng = np.random.RandomState(123)
@@ -49,7 +49,7 @@ class KITTI(data.Dataset):
     self.opt = opt
     self.alpha_in_degree = False
 
-    print('==> initializing kitti {}, {} data.'.format(opt.kitti_split, split))
+    print('==> initializing traffic_car , {} data.'.format(split))
     self.coco = coco.COCO(self.annot_path)
     self.images = self.coco.getImgIds()
     self.num_samples = len(self.images)

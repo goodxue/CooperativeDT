@@ -223,6 +223,8 @@ class opts(object):
                              help='use ground truth human joint local offset.')
     self.parser.add_argument('--eval_oracle_dep', action='store_true', 
                              help='use ground truth depth.')
+    self.parser.add_argument('--cam', type=str, default='cam1',
+                             help='which cam in traffic_car dataset')
 
   def parse(self, args=''):
     if args == '':
