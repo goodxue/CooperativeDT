@@ -31,7 +31,7 @@ class KITTI(data.Dataset):
         self.data_dir, 'annotations', 'traffic_car_{}.json').format(split)
     else:
       self.annot_path = os.path.join(self.data_dir, 
-        'annotations', 'traffic_{}.json').format(split)
+        'annotations', 'traffic_car_{}.json').format(split)
     self.max_objs = 50
     self.class_name = [
       '__background__', 'Car']
