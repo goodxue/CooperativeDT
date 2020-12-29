@@ -15,14 +15,14 @@ import torch.utils.data as data
 
 
 class KITTI(data.Dataset):
-  num_classes = 3
+  num_classes = 2
   default_resolution = [540, 960]
   mean = np.array([0.485, 0.456, 0.406], np.float32).reshape(1, 1, 3)
   std = np.array([0.229, 0.224, 0.225], np.float32).reshape(1, 1, 3)
 
   def __init__(self, opt, split):
     super(KITTI, self).__init__()
-    self.data_dir = os.path.join(opt.data_dir, 'kitti')
+    self.data_dir = os.path.join(opt.data_dir, 'traffic_car')
     self.img_dir = os.path.join(self.data_dir, 'images', 'trainval')
     if opt.trainval:
       split = 'trainval' if split == 'train' else 'test'

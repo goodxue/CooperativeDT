@@ -63,6 +63,17 @@ def draw_box_3d(image, corners, c=(0, 0, 255)):
                (corners[f[3], 0], corners[f[3], 1]), c, 1, lineType=cv2.LINE_AA)
   return image
 
+def draw_box_2d(image, corners, c=(255,0,0)):
+  face_idx = [[0,1,2,1],
+              [2,1,2,3],
+              [2,3,0,3],
+              [0,3,0,1]]
+  for ind_f in range(4):
+    f = face_idx[ind_f]
+    cv2.line(image, (corners[f[0]],corners[f[1]]),
+                (corners[f[2]], corners[f[3]]), c, 1, lineType=cv2.LINE_AA)
+  return image
+
 def unproject_2d_to_3d(pt_2d, depth, P):
   # pts_2d: 2
   # depth: 1

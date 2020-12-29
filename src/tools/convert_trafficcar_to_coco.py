@@ -13,7 +13,7 @@ import os
 SPLITS = ['3dop', 'subcnn'] 
 import _init_paths
 from utils.ddd_utils import compute_box_3d, project_to_image, alpha2rot_y
-from utils.ddd_utils import draw_box_3d, unproject_2d_to_3d
+from utils.ddd_utils import draw_box_3d, unproject_2d_to_3d, draw_box_2d
 
 '''
 #Values    Name      Description
@@ -134,9 +134,10 @@ for CAM in TRAIN_SETS:
         rotation_y = float(tmp[14])
 
         # #由于label中存在没有在图像像素范围内的框，因此当投影到图片上的3D框顶点超出个数大于6则忽略这个标签
-        # box_3d = compute_box_3d(dim, location, rotation_y)
+        box_3d = compute_box_3d(dim, location, rotation_y)
+        box_2d = project_to_image(box_3d, calib)
         img_size = np.asarray([IMG_W,IMG_H],dtype=np.int)
-        # inds = np.greater(box_3d,img_size)
+        # inds = np.greater(box_2d,img_size)
         # out_num = (inds[:,0] * inds[:,1]).sum()
         # if out_num > 6:
         #   continue
@@ -146,7 +147,7 @@ for CAM in TRAIN_SETS:
                                  calib[0, 2], calib[0, 0])
         
         #计算像素坐标系下的2dbbox，就是3dbbox每个轴最小的值组成的框。裁剪到图像上。
-        bbox = (np.min(box_3d[:,0]), np.min(box_3d[:,1]), np.max(box_3d[:,0]), np.max(box_3d[:,1]))
+        bbox = (np.min(box_2d[:,0]), np.min(box_2d[:,1]), np.max(box_2d[:,0]), np.max(box_2d[:,1]))
         bbox_crop = tuple(max(0, b) for b in bbox)
         bbox_crop = (min(img_size[0], bbox_crop[0]),
                      min(img_size[0], bbox_crop[1]),
@@ -169,10 +170,11 @@ for CAM in TRAIN_SETS:
                'rotation_y': rotation_y}
         ret['annotations'].append(ann)
         if DEBUG and tmp[0] != 'DontCare':
-          box_3d = compute_box_3d(dim, location, rotation_y)
-          box_2d = project_to_image(box_3d, calib)
+          #box_3d = compute_box_3d(dim, location, rotation_y)
+          #box_2d = project_to_image(box_3d, calib)
           # print('box_2d', box_2d)
           image = draw_box_3d(image, box_2d)
+          image = draw_box_2d(image, bbox_crop)
           x = (bbox[0] + bbox[2]) / 2
           '''
           print('rot_y, alpha2rot_y, dlt', tmp[0], 

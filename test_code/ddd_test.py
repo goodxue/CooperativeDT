@@ -2,6 +2,20 @@ import numpy as np
 import cv2
 import os
 
+def _rot_y2alpha(rot_y, x, cx, fx):
+    """
+    Get rotation_y by alpha + theta - 180
+    alpha : Observation angle of object, ranging [-pi..pi]
+    x : Object center x to the camera center (x-W/2), in pixels
+    rotation_y : Rotation ry around Y-axis in camera coordinates [-pi..pi]
+    """
+    alpha = rot_y - np.arctan2(x - cx, fx)
+    if alpha > np.pi:
+      alpha -= 2 * np.pi
+    if alpha < -np.pi:
+      alpha += 2 * np.pi
+    return alpha
+
 def compute_box_3d(dim, location, rotation_y):
   # dim: 3
   # location: 3
@@ -50,13 +64,13 @@ def draw_box_3d(image, corners, c=(0, 0, 255)):
 def draw_box_2d(image, corners, c=(255,0,0)):
   face_idx = [[0,1,2,1],
               [2,1,2,3],
-              [2,3,1,3],
-              [1,3,0,1]]
+              [2,3,0,3],
+              [0,3,0,1]]
   for ind_f in range(4):
     f = face_idx[ind_f]
     cv2.line(image, (corners[f[0]],corners[f[1]]),
                 (corners[f[2]], corners[f[3]]), c, 1, lineType=cv2.LINE_AA)
-    return image
+  return image
 
 
 def read_clib(calib_path):
@@ -72,6 +86,9 @@ if __name__ == '__main__':
   cats = ['Pedestrian', 'Car', 'Cyclist', 'Van', 'Truck',  'Person_sitting',
         'Tram', 'Misc', 'DontCare']
   cat_ids = {cat: i + 1 for i, cat in enumerate(cats)}
+  
+  IMG_H = 540
+  IMG_W = 960
 
   image = cv2.imread('.\\test_code\\000023.png')
   calib = read_clib('.\\test_code\\000000.txt')
@@ -87,10 +104,13 @@ if __name__ == '__main__':
     location = [float(tmp[11]), float(tmp[12]), float(tmp[13])]
     rotation_y = float(tmp[14])
 
+    box_3d = compute_box_3d(dim, location, rotation_y)
+    box_2d = project_to_image(box_3d, calib)
+    img_size = np.asarray([IMG_W,IMG_H],dtype=np.int)
     alpha = _rot_y2alpha(rotation_y, location[0], 
                                  calib[0, 2], calib[0, 0])
 
-    bbox = (np.min(box_3d[:,0]), np.min(box_3d[:,1]), np.max(box_3d[:,0]), np.max(box_3d[:,1]))
+    bbox = (np.min(box_2d[:,0]), np.min(box_2d[:,1]), np.max(box_2d[:,0]), np.max(box_2d[:,1]))
     bbox_crop = tuple(max(0, b) for b in bbox)
     bbox_crop = (min(img_size[0], bbox_crop[0]),
                   min(img_size[0], bbox_crop[1]),
@@ -104,7 +124,7 @@ if __name__ == '__main__':
             #'id': int(len(ret['annotations']) + 1),
             'category_id': cat_id,
             'dim': dim,
-            'bbox': _bbox_to_coco_bbox(bbox_crop),
+            #'bbox': _bbox_to_coco_bbox(bbox_crop),
             'depth': location[2],
             'alpha': alpha,
             'truncated': truncated,
@@ -112,10 +132,14 @@ if __name__ == '__main__':
             'location': location,
             'rotation_y': rotation_y}
     #ret['annotations'].append(ann)
-    box_3d = compute_box_3d(dim, location, rotation_y)
-    box_2d = project_to_image(box_3d, calib)
-    print('box_2d', box_2d)
+    #box_3d = compute_box_3d(dim, location, rotation_y)
+    #box_2d = project_to_image(box_3d, calib)
+    #print('box_2d', box_2d)
+    print('bbox_crop',bbox_crop)
+    #print('alpha: ',alpha)
+    print('alpha in degree: ',alpha * 180 / np.pi)
     image = draw_box_3d(image, box_2d)
+    image = draw_box_2d(image, bbox_crop)
     cv2.imshow('image', image)
 
     cv2.waitKey()
