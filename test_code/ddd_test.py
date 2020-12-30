@@ -9,12 +9,13 @@ def _rot_y2alpha(rot_y, x, cx, fx):
     x : Object center x to the camera center (x-W/2), in pixels
     rotation_y : Rotation ry around Y-axis in camera coordinates [-pi..pi]
     """
-    alpha = rot_y - np.arctan2(x - cx, fx)
+    ray = np.arctan2(x - cx, fx)
+    alpha = rot_y - ray
     if alpha > np.pi:
       alpha -= 2 * np.pi
     if alpha < -np.pi:
       alpha += 2 * np.pi
-    return alpha
+    return alpha, ray
 
 def compute_box_3d(dim, location, rotation_y):
   # dim: 3
@@ -103,11 +104,13 @@ if __name__ == '__main__':
     dim = [float(tmp[8]), float(tmp[9]), float(tmp[10])]
     location = [float(tmp[11]), float(tmp[12]), float(tmp[13])]
     rotation_y = float(tmp[14])
-
+    
     box_3d = compute_box_3d(dim, location, rotation_y)
     box_2d = project_to_image(box_3d, calib)
     img_size = np.asarray([IMG_W,IMG_H],dtype=np.int)
-    alpha = _rot_y2alpha(rotation_y, location[0], 
+
+    #犯错了，一开始用了location[0]，这里应该是像素坐标，应该用box2d的
+    alpha,ray = _rot_y2alpha(rotation_y, box_2d[:,0][0:4].sum()/4, 
                                  calib[0, 2], calib[0, 0])
 
     bbox = (np.min(box_2d[:,0]), np.min(box_2d[:,1]), np.max(box_2d[:,0]), np.max(box_2d[:,1]))
@@ -135,9 +138,11 @@ if __name__ == '__main__':
     #box_3d = compute_box_3d(dim, location, rotation_y)
     #box_2d = project_to_image(box_3d, calib)
     #print('box_2d', box_2d)
-    print('bbox_crop',bbox_crop)
+    #print('bbox_crop',bbox_crop)
     #print('alpha: ',alpha)
     print('alpha in degree: ',alpha * 180 / np.pi)
+    print('ray in defree: ',ray * 180 / np.pi)
+    #print(box_2d[:,0:3].sum()/4)
     image = draw_box_3d(image, box_2d)
     image = draw_box_2d(image, bbox_crop)
     cv2.imshow('image', image)

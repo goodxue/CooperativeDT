@@ -143,7 +143,7 @@ for CAM in TRAIN_SETS:
         #   continue
 
         #根据3d框中心以及内参矩阵计算alpha,注意location是3dbox底面中心（但是只用x，所以不用计算）
-        alpha = _rot_y2alpha(rotation_y, location[0], 
+        alpha = _rot_y2alpha(rotation_y, box_2d[:,0][0:4].sum()/4, 
                                  calib[0, 2], calib[0, 0])
         
         #计算像素坐标系下的2dbbox，就是3dbbox每个轴最小的值组成的框。裁剪到图像上。
