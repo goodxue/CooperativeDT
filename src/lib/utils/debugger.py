@@ -62,6 +62,13 @@ class Debugger(object):
       self.focal_length = 721.5377
       self.W = 1242
       self.H = 375
+
+    elif num_classes == 2 or dataset == 'traffic_car':
+      self.names = trafficcar_class_name
+      self.focal_length = 721.5377
+      self.W = 960
+      self.H = 540
+
     num_classes = len(self.names)
     self.down_ratio=down_ratio
     # for bird view
@@ -426,6 +433,10 @@ class Debugger(object):
                       (rect[e[1]][0], rect[e[1]][1]), lc, t,
                       lineType=cv2.LINE_AA)
     self.imgs[img_id] = bird_view
+
+trafficcar_class_name = {
+  'v','b'
+}
 
 
 kitti_class_name = [

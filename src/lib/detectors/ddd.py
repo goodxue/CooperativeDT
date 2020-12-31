@@ -22,9 +22,14 @@ from .base_detector import BaseDetector
 class DddDetector(BaseDetector):
   def __init__(self, opt):
     super(DddDetector, self).__init__(opt)
-    self.calib = np.array([[707.0493, 0, 604.0814, 45.75831],
-                           [0, 707.0493, 180.5066, -0.3454157],
-                           [0, 0, 1., 0.004981016]], dtype=np.float32)
+    #######################################吐了#######################################################################
+    #用自己的数据集，画到图片上就是尺寸啥的都不对，原来这这里作者把calib硬编码了，我真的是服了，找了两个小时##################
+    # self.calib = np.array([[707.0493, 0, 604.0814, 45.75831],
+    #                        [0, 707.0493, 180.5066, -0.3454157],
+    #                        [0, 0, 1., 0.004981016]], dtype=np.float32)
+    self.calib = np.array([[480, 0, 480, 0],
+                           [0, 480, 270, 0],
+                           [0, 0,   1.,  0]], dtype=np.float32)
 
 
   def pre_process(self, image, scale, calib=None):
