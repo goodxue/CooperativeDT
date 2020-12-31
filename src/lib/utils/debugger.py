@@ -434,9 +434,9 @@ class Debugger(object):
                       lineType=cv2.LINE_AA)
     self.imgs[img_id] = bird_view
 
-trafficcar_class_name = {
+trafficcar_class_name = [
   'v','b'
-}
+]
 
 
 kitti_class_name = [
