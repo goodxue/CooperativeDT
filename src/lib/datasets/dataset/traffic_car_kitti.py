@@ -21,6 +21,7 @@ class KITTI(data.Dataset):
   std = np.array([0.229, 0.224, 0.225], np.float32).reshape(1, 1, 3)
 
   def __init__(self, opt, split):
+    self.cam_num = opt.cam
     super(KITTI, self).__init__()
     self.data_dir = os.path.join(opt.data_dir, 'traffic_car/{}'.format(opt.cam))
     self.img_dir = os.path.join(self.data_dir, 'image_2')
@@ -84,6 +85,6 @@ class KITTI(data.Dataset):
   def run_eval(self, results, save_dir):
     self.save_results(results, save_dir)
     os.system('./tools/kitti_eval/evaluate_object_3d_offline ' + \
-              '../data/kitti/training/label_val ' + \
+              '../data/traffic_car/{}/label_new '.format(self.cam_num) + \
               '{}/results/'.format(save_dir))
     

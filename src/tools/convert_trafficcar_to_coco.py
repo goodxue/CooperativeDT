@@ -66,6 +66,7 @@ def read_clib(calib_path): #change 3x3 to 3x4
 # cats = ['Pedestrian', 'Car', 'Cyclist', 'Van', 'Truck',  'Person_sitting',
 #         'Tram', 'Misc', 'DontCare']
 cats = ['Car','DontCare']
+
 cat_ids = {cat: i + 1 for i, cat in enumerate(cats)}
 # cat_info = [{"name": "pedestrian", "id": 1}, {"name": "vehicle", "id": 2}]
 F = 721
@@ -96,11 +97,14 @@ for CAM in TRAIN_SETS:
   # splits = ['trainval', 'test']
   calib_path = calib_dir + '000000.txt'
   calib = read_clib(calib_path)
+  newlabel_dir = DATA_PATH + 'label_new/'
+  if not os.path.exists(newlabel_dir):
+    os.mkdir(newlabel_dir)
 
-  splits = {'train':TRAIN_NUM, 'val':VAL_NUM,'test':TEST_NUM}
+  splits = {'train':[1,TRAIN_NUM+1], 'val':[TRAIN_NUM+1,TRAIN_NUM+VAL_NUM+1],'test':[TRAIN_NUM+VAL_NUM+1,TRAIN_NUM+VAL_NUM+TEST_NUM+1]}
   for split in splits:
     ret = {'images': [], 'annotations': [], "categories": cat_info}
-    image_set = [str(i).rjust(6,'0') for i in range(1,splits[split]+1)]
+    image_set = [str(i).rjust(6,'0') for i in range(splits[split][0],splits[split][1])]
     #image_set = open(image_set_path + '{}.txt'.format(split), 'r')
     image_to_id = {}
     for line in image_set:
@@ -121,6 +125,9 @@ for CAM in TRAIN_SETS:
       if DEBUG:
         image = cv2.imread(
           DATA_PATH + 'images/trainval/' + image_info['file_name'])
+
+      out_path = os.path.join(newlabel_dir, '{:06d}.txt'.format(image_id))
+      f = open(out_path, 'w')
 
       for ann_ind, txt in enumerate(anns):
         tmp = txt[:-1].split(' ')
@@ -169,6 +176,19 @@ for CAM in TRAIN_SETS:
                'location': location,
                'rotation_y': rotation_y}
         ret['annotations'].append(ann)
+        
+        f.write('{} 0.0 0'.format('Car'))
+        f.write(' {:.2f}'.format(ann['alpha']))
+        for tmp in bbox:
+          f.write(' {:.2f}'.format(tmp))
+        for tmp in dim:
+          f.write(' {:.2f}'.format(tmp))
+        for tmp in location:
+          f.write(' {:.2f}'.format(tmp))
+        f.write(' {:.2f}'.format(rotation_y))
+        f.write('\n')
+
+
         if DEBUG and tmp[0] != 'DontCare':
           #box_3d = compute_box_3d(dim, location, rotation_y)
           #box_2d = project_to_image(box_3d, calib)
@@ -189,6 +209,7 @@ for CAM in TRAIN_SETS:
           pt_3d[1] += dim[0] / 2
           print('pt_3d', pt_3d)
           print('location', location)
+      f.close()
       if DEBUG:
         cv2.imshow('image', image)
         cv2.waitKey()
