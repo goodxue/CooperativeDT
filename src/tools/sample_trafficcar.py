@@ -21,9 +21,9 @@ OUT_IMG_PATH = os.path.join(OUT_PATH, 'image_2')
 OUT_ANN_PATH = os.path.join(OUT_PATH, 'label_2')
 OUT_CALIB_PATH = os.path.join(OUT_PATH, 'calib')
 count = 0
-for path in [OUT_IMG_PATH,OUT_CALIB_PATH,OUT_ANN_PATH]:
+for path in [OUT_PATH,OUT_IMG_PATH,OUT_CALIB_PATH,OUT_ANN_PATH]:
     if not os.path.exists(path):
-        os.mkdir(OUT_PATH)
+        os.mkdir(path)
     
 for cam in CAM_SETS:
     CAM_PATH = os.path.join(DATASET_PATH, cam)
@@ -34,14 +34,16 @@ for cam in CAM_SETS:
     # shutil.move(CALIB_FILE, OUT_CALIB_PATH)
 
     img_list = os.listdir(IMG_PATH)
+    img_list.sort(key=lambda x:int(x[:-4]))#这里需要排序，因为listdir是乱序的
     ann_list = os.listdir(ANN_PATH)
+    ann_list.sort(key=lambda x:int(x[:-4]))
     print('moving {} imgs/anns from {} to {}'.format(len(img_list),IMG_PATH,OUT_PATH))
     print('with index start with *{}*'.format(count+1))
 
     for img, ann in tzip(img_list,ann_list):
         count += 1
         ann_ori_path = os.path.join(ANN_PATH, ann)
-        ann_dst_path = os.path.join(OUT_IMG_PATH, '{:06d}.txt'.format(count))
+        ann_dst_path = os.path.join(OUT_ANN_PATH, '{:06d}.txt'.format(count))
         img_ori_path = os.path.join(IMG_PATH, img)
         img_dst_path = os.path.join(OUT_IMG_PATH, '{:06d}.png'.format(count))
         shutil.move(ann_ori_path, ann_dst_path)

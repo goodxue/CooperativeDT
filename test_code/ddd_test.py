@@ -91,9 +91,9 @@ if __name__ == '__main__':
   IMG_H = 540
   IMG_W = 960
 
-  image = cv2.imread('.\\test_code\\000023.png')
-  calib = read_clib('.\\test_code\\000000.txt')
-  anns = open('.\\test_code\\000023.txt', 'r')
+  image = cv2.imread('/home/ubuntu/xwp/CenterNet/data/traffic_car/cam_sample/image_2/000029.png')
+  calib = read_clib('./test_code/000000.txt')
+  anns = open('/home/ubuntu/xwp/CenterNet/data/traffic_car/cam_sample/label_2/000029.txt', 'r')
   for ann_ind, txt in enumerate(anns):
     tmp = txt[:-1].split(' ') #为了去掉末尾的\n
     cat_id = cat_ids[tmp[0]]

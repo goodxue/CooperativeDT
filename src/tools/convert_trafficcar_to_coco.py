@@ -77,13 +77,17 @@ CALIB = np.array([[F, 0, W / 2, EXT[0]], [0, F, H / 2, EXT[1]],
                   [0, 0, 1, EXT[2]]], dtype=np.float32)
 
 #一个cam共10000张图，选8000张训练，1000张验证，1000张测试
-TRAIN_NUM = 8000
-VAL_NUM = 1000
-TEST_NUM = 1000
-TRAIN_SETS = ['cam1','cam2','cam3','cam4','cam5','cam6']
+#cam_sample共70000张图，每个10000中6000训练，2000验证，2000测试
+TRAIN_NUM = 6000
+VAL_NUM = 2000
+TEST_NUM = 2000
+TRAIN_SETS = ['cam_sample']
 TEST_SETS = ['cam7']
 IMG_H = 540
 IMG_W = 960
+TRAIN_SAMPLE = [range(1,6001),range(10001,16001),range(20001,26001),range(30001,36001),range(40001,46001),range(50001,56001),range(60001,66001)]
+VAL_SAMPLE = [range(6001,8001),range(16001,18001),range(26001,28001),range(36001,38001),range(46001,48001),range(56001,58001),range(66001,68001)]
+TEST_SAMPLE = [range(8001,10001),range(18001,20001),range(28001,30001),range(38001,40001),range(48001,50001),range(58001,60001),range(68001,70001)]
 
 cat_info = []
 for i, cat in enumerate(cats):
@@ -101,10 +105,12 @@ for CAM in TRAIN_SETS:
   if not os.path.exists(newlabel_dir):
     os.mkdir(newlabel_dir)
 
-  splits = {'train':[1,TRAIN_NUM+1], 'val':[TRAIN_NUM+1,TRAIN_NUM+VAL_NUM+1],'test':[TRAIN_NUM+VAL_NUM+1,TRAIN_NUM+VAL_NUM+TEST_NUM+1]}
+  splits = {'train':TRAIN_SAMPLE, 'val':VAL_SAMPLE,'test':TEST_SAMPLE}
   for split in splits:
     ret = {'images': [], 'annotations': [], "categories": cat_info}
-    image_set = [str(i).rjust(6,'0') for i in range(splits[split][0],splits[split][1])]
+    image_set = []
+    for aset in splits[split]:
+        image_set += [str(i).rjust(6,'0') for i in aset]
     #image_set = open(image_set_path + '{}.txt'.format(split), 'r')
     image_to_id = {}
     for line in image_set:
