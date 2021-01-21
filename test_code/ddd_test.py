@@ -3,8 +3,9 @@ import cv2
 import os
 
 def _bbox_inside(box1, box2):
-  return box1[0] > box2[0] and box1[0] + box1[2] < box2[0] + box2[2] and \
-         box1[1] > box2[1] and box1[1] + box1[3] < box2[1] + box2[3] 
+  #coco box
+  return box1[0] > box2[0] and box1[2] < box2[2] and \
+         box1[1] > box2[1] and box1[3] < box2[3]
 
 def _rot_y2alpha(rot_y, x, cx, fx):
     """
@@ -86,6 +87,10 @@ def read_clib(calib_path):
       calib = calib.reshape(3, 3)
       return calib
 
+def _bbox_to_coco_bbox(bbox):
+  return [float(bbox[0]), float(bbox[1]),
+          float(bbox[2] - bbox[0]), float(bbox[3] - bbox[1])]
+
 
 if __name__ == '__main__':
   cats = ['Pedestrian', 'Car', 'Cyclist', 'Van', 'Truck',  'Person_sitting',
@@ -99,7 +104,7 @@ if __name__ == '__main__':
   calib = read_clib('./test_code/000000.txt')
   anns = open('/home/ubuntu/xwp/CenterNet/data/traffic_car/cam_sample/label_2/010231.txt', 'r')
   ori_anns = []
-  ret = {'images': [], 'annotations': [], "categories": cat_info}
+  ret = {'images': [], 'annotations': [], "categories": []}
   for ann_ind, txt in enumerate(anns):
     tmp = txt[:-1].split(' ') #为了去掉末尾的\n
     cat_id = cat_ids[tmp[0]]
@@ -133,7 +138,7 @@ if __name__ == '__main__':
             #'id': int(len(ret['annotations']) + 1),
             'category_id': cat_id,
             'dim': dim,
-            #'bbox': _bbox_to_coco_bbox(bbox_crop),
+            'bbox': _bbox_to_coco_bbox(bbox_crop),
             'depth': location[2],
             'alpha': alpha,
             'truncated': truncated,

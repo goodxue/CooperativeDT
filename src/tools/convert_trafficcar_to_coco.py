@@ -36,8 +36,9 @@ from utils.ddd_utils import draw_box_3d, unproject_2d_to_3d, draw_box_2d
                      detection, needed for p/r curves, higher is better.
 '''
 def _bbox_inside(box1, box2):
-  return box1[0] > box2[0] and box1[0] + box1[2] < box2[0] + box2[2] and \
-         box1[1] > box2[1] and box1[1] + box1[3] < box2[1] + box2[3] 
+  #coco box
+  return box1[0] > box2[0] and box1[2] < box2[2] and \
+         box1[1] > box2[1] and box1[3] < box2[3]
 
 def _bbox_to_coco_bbox(bbox):
   return [float(bbox[0]), float(bbox[1]),
