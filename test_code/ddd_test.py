@@ -2,6 +2,10 @@ import numpy as np
 import cv2
 import os
 
+def _bbox_inside(box1, box2):
+  return box1[0] > box2[0] and box1[0] + box1[2] < box2[0] + box2[2] and \
+         box1[1] > box2[1] and box1[1] + box1[3] < box2[1] + box2[3] 
+
 def _rot_y2alpha(rot_y, x, cx, fx):
     """
     Get rotation_y by alpha + theta - 180
@@ -94,6 +98,8 @@ if __name__ == '__main__':
   image = cv2.imread('/home/ubuntu/xwp/CenterNet/data/traffic_car/cam_sample/image_2/010231.png')
   calib = read_clib('./test_code/000000.txt')
   anns = open('/home/ubuntu/xwp/CenterNet/data/traffic_car/cam_sample/label_2/010231.txt', 'r')
+  ori_anns = []
+  ret = {'images': [], 'annotations': [], "categories": cat_info}
   for ann_ind, txt in enumerate(anns):
     tmp = txt[:-1].split(' ') #为了去掉末尾的\n
     cat_id = cat_ids[tmp[0]]
@@ -134,17 +140,84 @@ if __name__ == '__main__':
             'occluded': occluded,
             'location': location,
             'rotation_y': rotation_y}
+    ori_anns.append(ann)
     #ret['annotations'].append(ann)
     #box_3d = compute_box_3d(dim, location, rotation_y)
     #box_2d = project_to_image(box_3d, calib)
     #print('box_2d', box_2d)
     #print('bbox_crop',bbox_crop)
     #print('alpha: ',alpha)
-    print('alpha in degree: ',alpha * 180 / np.pi)
-    print('ray in defree: ',ray * 180 / np.pi)
-    #print(box_2d[:,0:3].sum()/4)
-    image = draw_box_3d(image, box_2d)
-    image = draw_box_2d(image, bbox_crop)
-    cv2.imshow('image', image)
+    # print('alpha in degree: ',alpha * 180 / np.pi)
+    # print('ray in defree: ',ray * 180 / np.pi)
+    # #print(box_2d[:,0:3].sum()/4)
+    # image = draw_box_3d(image, box_2d)
+    # image = draw_box_2d(image, bbox_crop)
+    # cv2.imshow('image', image)
 
-    cv2.waitKey()
+    # cv2.waitKey()
+
+  # Filter out bounding boxes outside the image
+  visable_anns = []
+  for i in range(len(ori_anns)):
+    vis = True
+    for j in range(len(ori_anns)):
+      if ori_anns[i]['depth'] - min(ori_anns[i]['dim']) / 2 > \
+          ori_anns[j]['depth'] + max(ori_anns[j]['dim']) / 2 and \
+        _bbox_inside(ori_anns[i]['bbox'], ori_anns[j]['bbox']):
+        vis = False
+        break
+    if vis:
+      visable_anns.append(ori_anns[i])
+    else:
+      pass
+
+  for ann in visable_anns:
+    ret['annotations'].append(ann)
+
+  for ann_ind, txt in enumerate(anns):
+    tmp = txt[:-1].split(' ') #为了去掉末尾的\n
+    cat_id = cat_ids[tmp[0]]
+    truncated = int(float(tmp[1]))
+    occluded = int(tmp[2])
+    alpha = float(tmp[3])
+    bbox = [float(tmp[4]), float(tmp[5]), float(tmp[6]), float(tmp[7])]
+    dim = [float(tmp[8]), float(tmp[9]), float(tmp[10])]
+    location = [float(tmp[11]), float(tmp[12]), float(tmp[13])]
+    rotation_y = float(tmp[14])
+    
+    box_3d = compute_box_3d(dim, location, rotation_y)
+    box_2d = project_to_image(box_3d, calib)
+    img_size = np.asarray([IMG_W,IMG_H],dtype=np.int)
+
+    #犯错了，一开始用了location[0]，这里应该是像素坐标，应该用box2d的
+    alpha,ray = _rot_y2alpha(rotation_y, box_2d[:,0][0:4].sum()/4, 
+                                 calib[0, 2], calib[0, 0])
+
+    bbox = (np.min(box_2d[:,0]), np.min(box_2d[:,1]), np.max(box_2d[:,0]), np.max(box_2d[:,1]))
+    bbox_crop = tuple(max(0, b) for b in bbox)
+    bbox_crop = (min(img_size[0], bbox_crop[0]),
+                  min(img_size[0], bbox_crop[1]),
+                  min(img_size[0], bbox_crop[2]),
+                  min(img_size[1], bbox_crop[3]))
+    # Detect if a cropped box is empty.
+    if bbox_crop[0] >= bbox_crop[2] or bbox_crop[1] >= bbox_crop[3]:
+      continue
+
+    ann = {#'image_id': image_id,
+            #'id': int(len(ret['annotations']) + 1),
+            'category_id': cat_id,
+            'dim': dim,
+            #'bbox': _bbox_to_coco_bbox(bbox_crop),
+            'depth': location[2],
+            'alpha': alpha,
+            'truncated': truncated,
+            'occluded': occluded,
+            'location': location,
+            'rotation_y': rotation_y}
+    if ann in visable_anns:
+      image = draw_box_3d(image, box_2d)
+      image = draw_box_2d(image, bbox_crop)
+      cv2.imshow('image', image)
+      print('alpha in degree: ',alpha * 180 / np.pi)
+      print('ray in defree: ',ray * 180 / np.pi)
+      cv2.waitKey()

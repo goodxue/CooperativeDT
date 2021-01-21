@@ -35,6 +35,9 @@ from utils.ddd_utils import draw_box_3d, unproject_2d_to_3d, draw_box_2d
    1    score        Only for results: Float, indicating confidence in
                      detection, needed for p/r curves, higher is better.
 '''
+def _bbox_inside(box1, box2):
+  return box1[0] > box2[0] and box1[0] + box1[2] < box2[0] + box2[2] and \
+         box1[1] > box2[1] and box1[1] + box1[3] < box2[1] + box2[3] 
 
 def _bbox_to_coco_bbox(bbox):
   return [float(bbox[0]), float(bbox[1]),
@@ -134,7 +137,7 @@ for CAM in TRAIN_SETS:
 
       out_path = os.path.join(newlabel_dir, '{:06d}.txt'.format(image_id))
       f = open(out_path, 'w')
-
+      ori_anns = []
       for ann_ind, txt in enumerate(anns):
         tmp = txt[:-1].split(' ')
         cat_id = cat_ids[tmp[0]]
@@ -181,7 +184,24 @@ for CAM in TRAIN_SETS:
                'occluded': occluded,
                'location': location,
                'rotation_y': rotation_y}
-        ret['annotations'].append(ann)
+        ori_anns.append(ann)
+        # Filter out bounding boxes outside the image
+        visable_anns = []
+        for i in range(len(ori_anns)):
+          vis = True
+          for j in range(len(ori_anns)):
+            if ori_anns[i]['depth'] - min(ori_anns[i]['dim']) / 2 > \
+                ori_anns[j]['depth'] + max(ori_anns[j]['dim']) / 2 and \
+              _bbox_inside(ori_anns[i]['bbox'], ori_anns[j]['bbox']):
+              vis = False
+              break
+          if vis:
+            visable_anns.append(ori_anns[i])
+          else:
+            pass
+
+        for ann in visable_anns:
+          ret['annotations'].append(ann)
         
         f.write('{} 0.0 0'.format('Car'))
         f.write(' {:.2f}'.format(ann['alpha']))
