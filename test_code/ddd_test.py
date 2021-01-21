@@ -54,7 +54,7 @@ def draw_box_3d(image, corners, c=(0, 0, 255)):
     f = face_idx[ind_f]
     for j in range(4):
       cv2.line(image, (corners[f[j], 0], corners[f[j], 1]),
-               (corners[f[(j+1)%4], 0], corners[f[(j+1)%4], 1]), c, 2, lineType=cv2.LINE_AA)
+               (corners[f[(j+1)%4], 0], corners[f[(j+1)%4], 1]), c, 1, lineType=cv2.LINE_AA)
     if ind_f == 0:
       cv2.line(image, (corners[f[0], 0], corners[f[0], 1]),
                (corners[f[2], 0], corners[f[2], 1]), c, 1, lineType=cv2.LINE_AA)
@@ -91,9 +91,9 @@ if __name__ == '__main__':
   IMG_H = 540
   IMG_W = 960
 
-  image = cv2.imread('/home/ubuntu/xwp/CenterNet/data/traffic_car/cam_sample/image_2/000029.png')
+  image = cv2.imread('/home/ubuntu/xwp/CenterNet/data/traffic_car/cam_sample/image_2/010231.png')
   calib = read_clib('./test_code/000000.txt')
-  anns = open('/home/ubuntu/xwp/CenterNet/data/traffic_car/cam_sample/label_2/000029.txt', 'r')
+  anns = open('/home/ubuntu/xwp/CenterNet/data/traffic_car/cam_sample/label_2/010231.txt', 'r')
   for ann_ind, txt in enumerate(anns):
     tmp = txt[:-1].split(' ') #为了去掉末尾的\n
     cat_id = cat_ids[tmp[0]]

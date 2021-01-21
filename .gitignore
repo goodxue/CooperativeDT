@@ -109,3 +109,6 @@ ENV/
 
 # mypy
 .mypy_cache/
+
+./experiments/ddd_demo.sh
+./experiments/ddd_traffic_car.sh
