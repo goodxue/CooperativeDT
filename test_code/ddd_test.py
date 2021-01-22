@@ -4,8 +4,8 @@ import os
 
 def _bbox_inside(box1, box2):
   #coco box
-  return box1[0] > box2[0] and box1[2] < box2[2] and \
-         box1[1] > box2[1] and box1[3] < box2[3]
+  return box1[0] > box2[0] and box1[0] + box1[2] < box2[0] + box2[2] and \
+         box1[1] > box2[1] and box1[1] + box1[3] < box2[1] + box2[3]
 
 def _rot_y2alpha(rot_y, x, cx, fx):
     """
@@ -100,9 +100,9 @@ if __name__ == '__main__':
   IMG_H = 540
   IMG_W = 960
 
-  image = cv2.imread('/home/ubuntu/xwp/CenterNet/data/traffic_car/cam_sample/image_2/010231.png')
+  image = cv2.imread('/home/ubuntu/xwp/CenterNet/data/traffic_car/cam_sample/image_2/038354.png')
   calib = read_clib('./test_code/000000.txt')
-  anns = open('/home/ubuntu/xwp/CenterNet/data/traffic_car/cam_sample/label_2/010231.txt', 'r')
+  anns = open('/home/ubuntu/xwp/CenterNet/data/traffic_car/cam_sample/label_2/038354.txt', 'r')
   ori_anns = []
   ret = {'images': [], 'annotations': [], "categories": []}
   for ann_ind, txt in enumerate(anns):
@@ -166,8 +166,8 @@ if __name__ == '__main__':
   for i in range(len(ori_anns)):
     vis = True
     for j in range(len(ori_anns)):
-      if ori_anns[i]['depth'] - min(ori_anns[i]['dim']) / 2 > \
-          ori_anns[j]['depth'] + max(ori_anns[j]['dim']) / 2 and \
+      if ori_anns[i]['depth']  > \
+          ori_anns[j]['depth']  and \
         _bbox_inside(ori_anns[i]['bbox'], ori_anns[j]['bbox']):
         vis = False
         break
@@ -178,51 +178,26 @@ if __name__ == '__main__':
 
   for ann in visable_anns:
     ret['annotations'].append(ann)
+  
+  print('len(ori_anns): ',len(ori_anns))
+  print('len(vis_ann):',len(visable_anns))
 
-  for ann_ind, txt in enumerate(anns):
-    tmp = txt[:-1].split(' ') #为了去掉末尾的\n
-    cat_id = cat_ids[tmp[0]]
-    truncated = int(float(tmp[1]))
-    occluded = int(tmp[2])
-    alpha = float(tmp[3])
-    bbox = [float(tmp[4]), float(tmp[5]), float(tmp[6]), float(tmp[7])]
-    dim = [float(tmp[8]), float(tmp[9]), float(tmp[10])]
-    location = [float(tmp[11]), float(tmp[12]), float(tmp[13])]
-    rotation_y = float(tmp[14])
-    
-    box_3d = compute_box_3d(dim, location, rotation_y)
-    box_2d = project_to_image(box_3d, calib)
-    img_size = np.asarray([IMG_W,IMG_H],dtype=np.int)
+  for ann in visable_anns:
+    dim = ann['dim']
+    location = ann['location']
+    rotation_y = ann['rotation_y']
+    box_3d = compute_box_3d(dim,location,rotation_y)
+    box_2d = project_to_image(box_3d,calib)
+    box_crop = list(ann['bbox'])
+    print('ann[\'bbox\' ]',ann['bbox'])
+    box_crop[2] = box_crop[0] + box_crop[2]
+    box_crop[3] = box_crop[1] + box_crop[3]
+    box_crop = [int(x) for x  in box_crop]
+    image = draw_box_3d(image,box_2d)
+    image = draw_box_2d(image, box_crop)
+    print(bbox_crop)
+    cv2.imshow('image',image)
+    cv2.waitKey()
 
-    #犯错了，一开始用了location[0]，这里应该是像素坐标，应该用box2d的
-    alpha,ray = _rot_y2alpha(rotation_y, box_2d[:,0][0:4].sum()/4, 
-                                 calib[0, 2], calib[0, 0])
-
-    bbox = (np.min(box_2d[:,0]), np.min(box_2d[:,1]), np.max(box_2d[:,0]), np.max(box_2d[:,1]))
-    bbox_crop = tuple(max(0, b) for b in bbox)
-    bbox_crop = (min(img_size[0], bbox_crop[0]),
-                  min(img_size[0], bbox_crop[1]),
-                  min(img_size[0], bbox_crop[2]),
-                  min(img_size[1], bbox_crop[3]))
-    # Detect if a cropped box is empty.
-    if bbox_crop[0] >= bbox_crop[2] or bbox_crop[1] >= bbox_crop[3]:
-      continue
-
-    ann = {#'image_id': image_id,
-            #'id': int(len(ret['annotations']) + 1),
-            'category_id': cat_id,
-            'dim': dim,
-            #'bbox': _bbox_to_coco_bbox(bbox_crop),
-            'depth': location[2],
-            'alpha': alpha,
-            'truncated': truncated,
-            'occluded': occluded,
-            'location': location,
-            'rotation_y': rotation_y}
-    if ann in visable_anns:
-      image = draw_box_3d(image, box_2d)
-      image = draw_box_2d(image, bbox_crop)
-      cv2.imshow('image', image)
-      print('alpha in degree: ',alpha * 180 / np.pi)
-      print('ray in defree: ',ray * 180 / np.pi)
-      cv2.waitKey()
+#TUDO:
+#filter out the invisiable 3dbbox which in front of the camera with small distance(1m-2m), which covers more than a half image.
