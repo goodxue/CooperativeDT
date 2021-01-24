@@ -10,10 +10,10 @@ import os
 from tqdm.contrib import tzip
 import shutil
 
-TRAIN_NUM = 6000
-VAL_NUM = 2000
-TEST_NUM = 2000
-CAM_SETS = ['cam1','cam2','cam3','cam4','cam5','cam6','cam7']
+TRAIN_NUM = 7000
+VAL_NUM = 1500
+TEST_NUM = 1500
+CAM_SETS = ['cam1','cam2','cam4','cam5','cam6','cam7']
 
 CAM_NUM = ''
 OUT_PATH = os.path.join(DATASET_PATH, 'cam_sample')

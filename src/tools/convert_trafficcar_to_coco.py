@@ -37,8 +37,8 @@ from utils.ddd_utils import draw_box_3d, unproject_2d_to_3d, draw_box_2d
 '''
 def _bbox_inside(box1, box2):
   #coco box
-  return box1[0] > box2[0] and box1[2] < box2[2] and \
-         box1[1] > box2[1] and box1[3] < box2[3]
+  return box1[0] > box2[0] and box1[0] + box1[2] < box2[0] + box2[2] and \
+         box1[1] > box2[1] and box1[1] + box1[3] < box2[1] + box2[3]
 
 def _bbox_to_coco_bbox(bbox):
   return [float(bbox[0]), float(bbox[1]),
@@ -82,16 +82,20 @@ CALIB = np.array([[F, 0, W / 2, EXT[0]], [0, F, H / 2, EXT[1]],
 
 #一个cam共10000张图，选8000张训练，1000张验证，1000张测试
 #cam_sample共70000张图，每个10000中6000训练，2000验证，2000测试
-TRAIN_NUM = 6000
-VAL_NUM = 2000
-TEST_NUM = 2000
+TRAIN_NUM = 7000
+VAL_NUM = 1500
+TEST_NUM = 1500
 TRAIN_SETS = ['cam_sample']
 TEST_SETS = ['cam7']
 IMG_H = 540
 IMG_W = 960
-TRAIN_SAMPLE = [range(1,6001),range(10001,16001),range(20001,26001),range(30001,36001),range(40001,46001),range(50001,56001),range(60001,66001)]
-VAL_SAMPLE = [range(6001,8001),range(16001,18001),range(26001,28001),range(36001,38001),range(46001,48001),range(56001,58001),range(66001,68001)]
-TEST_SAMPLE = [range(8001,10001),range(18001,20001),range(28001,30001),range(38001,40001),range(48001,50001),range(58001,60001),range(68001,70001)]
+TRAIN_SAMPLE = [range(1,TRAIN_NUM+1),range(10001,TRAIN_NUM+10001),range(20001,TRAIN_NUM+20001),range(30001,TRAIN_NUM+30001),\
+  range(40001,TRAIN_NUM+40001),range(50001,TRAIN_NUM+50001)]
+VAL_SAMPLE = [range(TRAIN_NUM+1,TRAIN_NUM+1+VAL_NUM),range(TRAIN_NUM+10001,TRAIN_NUM+10001+VAL_NUM),\
+  range(TRAIN_NUM+20001,TRAIN_NUM+20001+VAL_NUM),range(TRAIN_NUM+30001,TRAIN_NUM+30001+VAL_NUM),range(TRAIN_NUM+40001,TRAIN_NUM+40001+VAL_NUM),\
+    range(TRAIN_NUM+50001,TRAIN_NUM+50001+VAL_NUM)]
+TEST_SAMPLE = [range(TRAIN_NUM+1+VAL_NUM,10001),range(TRAIN_NUM+10001+VAL_NUM,20001),range(TRAIN_NUM+20001+VAL_NUM,30001),\
+  range(TRAIN_NUM+30001+VAL_NUM,40001),range(TRAIN_NUM+40001+VAL_NUM,50001),range(TRAIN_NUM+50001+VAL_NUM,60001)]
 
 cat_info = []
 for i, cat in enumerate(cats):
@@ -173,6 +177,8 @@ for CAM in TRAIN_SETS:
         # Detect if a cropped box is empty.
         if bbox_crop[0] >= bbox_crop[2] or bbox_crop[1] >= bbox_crop[3]:
           continue
+        if location[2] < 2.0:
+          continue
 
         ann = {'image_id': image_id,
                'id': int(len(ret['annotations']) + 1),
@@ -191,8 +197,8 @@ for CAM in TRAIN_SETS:
         for i in range(len(ori_anns)):
           vis = True
           for j in range(len(ori_anns)):
-            if ori_anns[i]['depth'] - min(ori_anns[i]['dim']) / 2 > \
-                ori_anns[j]['depth'] + max(ori_anns[j]['dim']) / 2 and \
+            if ori_anns[i]['depth'] > \
+                ori_anns[j]['depth']  and \
               _bbox_inside(ori_anns[i]['bbox'], ori_anns[j]['bbox']):
               vis = False
               break
@@ -247,6 +253,8 @@ for CAM in TRAIN_SETS:
     print("# images: ", len(ret['images']))
     print("# annotations: ", len(ret['annotations']))
     # import pdb; pdb.set_trace()
+    if not os.path.exists('{}annotations'.format(DATA_PATH)):
+      os.mkdir('{}annotations'.format(DATA_PATH))
     out_path = '{}annotations/traffic_car_{}.json'.format(DATA_PATH,split)
     json.dump(ret, open(out_path, 'w'))
   

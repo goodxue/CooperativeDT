@@ -173,6 +173,8 @@ class opts(object):
                              help='loss weight for 3d bounding box size.')
     self.parser.add_argument('--rot_weight', type=float, default=1,
                              help='loss weight for orientation.')
+    self.parser.add_argument('--id_weight', type=float, default=1,
+                             help='loss weight for reid.')
     self.parser.add_argument('--peak_thresh', type=float, default=0.2)
     
     # task
@@ -207,6 +209,11 @@ class opts(object):
                                   'human joint heatmaps.')
     self.parser.add_argument('--not_reg_bbox', action='store_true',
                              help='not regression bounding box size.')
+    #tracking
+    self.parser.add_argument('--not_reg_id', action='store_true',
+                             help='not regression reid embedding.')
+    self.parser.add_argument('--reid_dim', type=int, default=128,
+                              help='feature dim for reid. ')
     
     # ground truth validation
     self.parser.add_argument('--eval_oracle_hm', action='store_true', 
@@ -246,6 +253,7 @@ class opts(object):
     opt.reg_bbox = not opt.not_reg_bbox
     opt.hm_hp = not opt.not_hm_hp
     opt.reg_hp_offset = (not opt.not_reg_hp_offset) and opt.hm_hp
+    opt.reg_id = not opt.not_reg_id
 
     if opt.head_conv == -1: # init default head_conv
       opt.head_conv = 256 if 'dla' in opt.arch else 64
@@ -316,6 +324,9 @@ class opts(object):
           {'wh': 2})
       if opt.reg_offset:
         opt.heads.update({'reg': 2})
+      if opt.reg_id:
+        pass
+        #opt.heads.update({'id':opt.reid_dim})
     elif opt.task == 'ctdet':
       # assert opt.dataset in ['pascal', 'coco']
       opt.heads = {'hm': opt.num_classes,

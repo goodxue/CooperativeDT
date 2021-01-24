@@ -4,6 +4,7 @@ from __future__ import print_function
 
 import torch
 import numpy as np
+import torch.nn.functional as F
 
 from models.losses import FocalLoss, L1Loss, BinRotLoss
 from models.decode import ddd_decode
@@ -12,6 +13,7 @@ from utils.debugger import Debugger
 from utils.post_process import ddd_post_process
 from utils.oracle_utils import gen_oracle_map
 from .base_trainer import BaseTrainer
+from models.utils import _transpose_and_gather_feat
 
 class DddLoss(torch.nn.Module):
   def __init__(self, opt):
@@ -20,12 +22,14 @@ class DddLoss(torch.nn.Module):
     self.crit_reg = L1Loss()
     self.crit_rot = BinRotLoss()
     self.opt = opt
+    self.emb_scale = 1
   
   def forward(self, outputs, batch):
     opt = self.opt
 
     hm_loss, dep_loss, rot_loss, dim_loss = 0, 0, 0, 0
     wh_loss, off_loss = 0, 0
+    id_loss = 0
     for s in range(opt.num_stacks):
       output = outputs[s]
       output['hm'] = _sigmoid(output['hm'])
@@ -54,6 +58,14 @@ class DddLoss(torch.nn.Module):
       if opt.reg_offset and opt.off_weight > 0:
         off_loss += self.crit_reg(output['reg'], batch['rot_mask'],
                                   batch['ind'], batch['reg']) / opt.num_stacks
+      if opt.reg_id and opt.id_weight > 0:
+        pass
+        # id_head = _transpose_and_gather_feat(output['id'],batch['ind'])
+        # id_head = id_head[batch['reg_mask'] > 0].contiguous()
+        # id_head = self.emb_scale * F.normalize(id_head)
+        # id_target = batch['ids'][batch['reg_mask'] > 0]
+
+        # id_output = 
     loss = opt.hm_weight * hm_loss + opt.dep_weight * dep_loss + \
            opt.dim_weight * dim_loss + opt.rot_weight * rot_loss + \
            opt.wh_weight * wh_loss + opt.off_weight * off_loss
