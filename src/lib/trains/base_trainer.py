@@ -18,6 +18,8 @@ class ModelWithLoss(torch.nn.Module):
   def forward(self, batch):
     outputs = self.model(batch['input'])
     loss, loss_stats = self.loss(outputs, batch)
+    # print("loss type:",type(loss))
+    # print("loss itself",loss)
     return outputs[-1], loss, loss_stats
 
 class BaseTrainer(object):
