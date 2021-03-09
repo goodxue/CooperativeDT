@@ -100,9 +100,9 @@ if __name__ == '__main__':
   IMG_H = 540
   IMG_W = 960
 
-  image = cv2.imread('/home/ubuntu/xwp/CenterNet/data/traffic_car/cam_sample/image_2/010232.png')
+  image = cv2.imread('/home/ubuntu/xwp/CenterNet/data/traffic_car/cam_sample/image_2/000053.png')
   calib = read_clib('./test_code/000000.txt')
-  anns = open('/home/ubuntu/xwp/CenterNet/data/traffic_car/cam_sample/label_2/010232.txt', 'r')
+  anns = open('/home/ubuntu/xwp/CenterNet/data/traffic_car/cam_sample/label_2/000052.txt', 'r')
   ori_anns = []
   ret = {'images': [], 'annotations': [], "categories": []}
   for ann_ind, txt in enumerate(anns):
@@ -195,7 +195,7 @@ if __name__ == '__main__':
     box_crop[2] = box_crop[0] + box_crop[2]
     box_crop[3] = box_crop[1] + box_crop[3]
     box_crop = [int(x) for x  in box_crop]
-    image = draw_box_3d(image,box_2d)
+    #image = draw_box_3d(image,box_2d)
     image = draw_box_2d(image, box_crop)
     print(bbox_crop)
     cv2.imshow('image',image)
