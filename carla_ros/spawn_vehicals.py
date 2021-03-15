@@ -98,8 +98,8 @@ def main():
 
     client = carla.Client('localhost', 2000,1)
     client.set_timeout(10.0)
-    world = client.load_world('Town05')
-    world.set_weather(all_weather[args.weather_num])
+    #world = client.load_world('Town05')
+    #world.set_weather(all_weather[args.weather_num])
 
 
     logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)

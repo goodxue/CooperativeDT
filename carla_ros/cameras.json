@@ -25,6 +25,15 @@
                     "id": "control"
                 }
             ]
+        },
+        {
+            "type": "sensor.camera.rgb",
+            "id" : "cam3",
+            "spawn_point":{"x":-63,"y":155,"z":4,"roll":0.0,"pitch":90,"yaw":20},
+            "image_size_x":960,
+            "image_size_y":540,
+            "fov":90.0,
+            "sensor_tick":0.05
         }
     ]
 }
