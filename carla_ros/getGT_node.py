@@ -20,11 +20,11 @@ class GetGroundTruth(object):
         id_list = [camera.id for camera in cameras]
 
 
-        for camera_id in id_list"
-            camera_publisher = rospy.Publisher('/carla/{}/image'.format(camera_id),
-                                                        Image,
-                                                        queue_size=1)
-            self.publisher_list.append(camera_publisher)
+        # for camera_id in id_list"
+        #     camera_publisher = rospy.Publisher('/carla/{}/image'.format(camera_id),
+        #                                                 Image,
+        #                                                 queue_size=1)
+        #     self.publisher_list.append(camera_publisher)
         
 
 
@@ -35,11 +35,21 @@ if __name__ == '__main__':
     world_snapshot = world.get_snapshot()
     cameras=[actor for actor in actual_actor if actor.type_id.find('camera')!=-1]
     rospy.info("find {} camera sensors!".format(len(cameras)))
-    getGT_node = GetGroundTruth(cameras)
+    #getGT_node = GetGroundTruth(cameras)
 
     try:
         while not rospy.core.is_shutdown():
             world_snapshot = world.get_snapshot()
             actual_actor=[world.get_actor(actor_snapshot.id) for actor_snapshot in world_snapshot]
             vehicles=[actor for actor in actual_actor if actor.type_id.find('vehicle')!=-1]
+            
+            loc_vehicles_dic = {}
+            for cam in cameras:
+                loc_vehicles = [vehicle for vehicle in vehicles if vehicle.get_transform().location.distance(cam.get_transform().location)<80]
+                loc_vehicles_dic[cam.id] = loc_vehicles
+                
+            for key,value in loc_vehicles_dic:
+                print(key,": ",len(value))
+            
+                
         
