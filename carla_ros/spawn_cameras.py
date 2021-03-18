@@ -41,10 +41,10 @@ def setup_sensors(world, sensors, attached_vehicle_id=None):
             actor_list.append(camera_rgb)
 
 
-        except NameError:
-            rospy.logerr("Sensor rolename '{}' is only allowed to be used once.".format(
-                sensor_spec['id']))
-            continue
+        # except NameError:
+        #     rospy.logerr("Sensor rolename '{}' is only allowed to be used once.".format(
+        #         sensor_spec['id']))
+        #     continue
 
 def main(sensors_definition_file):
     if not os.path.exists(sensors_definition_file):
