@@ -2,6 +2,7 @@ import os
 import sys
 import math
 import json
+import glob,pdb
 try:
     sys.path.append(glob.glob('../carla/dist/carla-*%d.%d-%s.egg' % (
         sys.version_info.major,
@@ -15,6 +16,7 @@ import carla
 VIEW_WIDTH = 1920//2
 VIEW_HEIGHT = 1080//2
 actor_list = []
+sync = False
 
 def setup_sensors(world, sensors, attached_vehicle_id=None):
     sensor_names = []
@@ -37,19 +39,17 @@ def setup_sensors(world, sensors, attached_vehicle_id=None):
             camera_bp.set_attribute('image_size_y', str(sensor_spec.pop("image_size_y")))
             camera_bp.set_attribute('fov', str(sensor_spec.pop("fov")))
 
-            camera_rgb = world.spawn_actor(camera_bp,camera_point)
+            camera_rgb = world.spawn_actor(camera_bp,point)
             actor_list.append(camera_rgb)
 
 
-        # except NameError:
-        #     rospy.logerr("Sensor rolename '{}' is only allowed to be used once.".format(
-        #         sensor_spec['id']))
-        #     continue
+        except NameError:
+            continue
 
 def main(sensors_definition_file):
     if not os.path.exists(sensors_definition_file):
         raise RuntimeError(
-            "Could not read sensor-definition from {}".format(sensosr_definition_file))
+            "Could not read sensor-definition from {}".format(sensors_definition_file))
 
     with open(sensors_definition_file) as handle:
         json_actors = json.loads(handle.read())
@@ -67,12 +67,10 @@ def main(sensors_definition_file):
         client.set_timeout(10.0)
         world = client.get_world()
 
-        self.setup_sensors(world, global_sensors)
-        except RuntimeError as e:
-            raise RuntimeError("Setting up global sensors failed: {}".format(e))
+        setup_sensors(world, global_sensors)
 
         while True:
-            if args.sync and synchronous_master:
+            if sync:
                 world.tick()
             else:
                 world.wait_for_tick()

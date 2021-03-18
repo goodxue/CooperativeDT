@@ -8,6 +8,7 @@
 import glob,pdb
 import os
 import sys
+import json
 import argparse
 import logging
 import time
@@ -491,7 +492,7 @@ def main(cam_type,cam_subset,weather_num,car_num_id):
     sensors_definition_file = 'dataset.json'
     if not os.path.exists(sensors_definition_file):
         raise RuntimeError(
-            "Could not read sensor-definition from {}".format(sensosr_definition_file))
+            "Could not read sensor-definition from {}".format(sensors_definition_file))
 
     with open(sensors_definition_file) as handle:
         json_actors = json.loads(handle.read())
@@ -524,7 +525,7 @@ def main(cam_type,cam_subset,weather_num,car_num_id):
             camera_bp.set_attribute('image_size_y', str(sensor_spec.pop("image_size_y")))
             camera_bp.set_attribute('fov', str(sensor_spec.pop("fov")))
 
-            camera_rgb = world.spawn_actor(camera_bp,camera_point)
+            camera_rgb = world.spawn_actor(camera_bp,point)
             actor_list.append(camera_rgb)
         except RuntimeError as e:
             raise RuntimeError("Setting up global sensors failed: {}".format(e))
