@@ -1,6 +1,146 @@
 import numpy as np
 import cv2
 import os
+from utils import *
+import json
+import argparse
+
+def get_matrix(transform):
+  """
+  Creates matrix from carla transform.
+  """
+  rotation = transform.rotation
+  location = transform.location
+  c_y = np.cos(np.radians(rotation.yaw))
+  s_y = np.sin(np.radians(rotation.yaw))
+  c_r = np.cos(np.radians(rotation.roll))
+  s_r = np.sin(np.radians(rotation.roll))
+  c_p = np.cos(np.radians(rotation.pitch))
+  s_p = np.sin(np.radians(rotation.pitch))
+  matrix = np.matrix(np.identity(4))
+  matrix[0, 3] = location.x
+  matrix[1, 3] = location.y
+  matrix[2, 3] = location.z
+  matrix[0, 0] = c_p * c_y
+  matrix[0, 1] = c_y * s_p * s_r - s_y * c_r
+  matrix[0, 2] = -c_y * s_p * c_r - s_y * s_r
+  matrix[1, 0] = s_y * c_p
+  matrix[1, 1] = s_y * s_p * s_r + c_y * c_r
+  matrix[1, 2] = -s_y * s_p * c_r + c_y * s_r
+  matrix[2, 0] = s_p
+  matrix[2, 1] = -c_p * s_r
+  matrix[2, 2] = c_p * c_r
+  return matrix
+
+class ClientSideBoundingBoxes(object):
+  """
+  This is a module responsible for creating 3D bounding boxes and drawing them
+  client-side on pygame surface.
+  """
+
+  @staticmethod
+  def get_bounding_boxes(vehicles, camera):
+      """
+      Creates 3D bounding boxes based on carla vehicle list and camera.
+      """
+
+      bounding_boxes = [ClientSideBoundingBoxes.get_bounding_box(vehicle, camera) for vehicle in vehicles]
+      # filter objects behind camera
+      bounding_boxes = [bb for bb in bounding_boxes if all(bb[:, 2] > 0)]
+      return bounding_boxes
+      
+  @staticmethod
+  def get_bounding_box(vehicle, camera):
+      """
+      Returns 3D bounding box for a vehicle based on camera view.
+      """
+
+      bb_cords = ClientSideBoundingBoxes._create_bb_points(vehicle)
+      cords_x_y_z = ClientSideBoundingBoxes._vehicle_to_sensor(bb_cords, vehicle, camera)[:3, :]
+      cords_y_minus_z_x = np.concatenate([cords_x_y_z[1, :], -cords_x_y_z[2, :], cords_x_y_z[0, :]])
+      bbox = np.transpose(np.dot(camera_coordinate(camera), cords_y_minus_z_x))
+      camera_bbox = np.concatenate([bbox[:, 0] / bbox[:, 2], bbox[:, 1] / bbox[:, 2], bbox[:, 2]], axis=1)
+      return camera_bbox
+
+  @staticmethod
+  def _create_bb_points(vehicle):
+      """
+      Returns 3D bounding box for a vehicle.
+      """
+
+      cords = np.zeros((8, 4))
+      extent = vehicle.bounding_box.extent
+      cords[0, :] = np.array([extent.x, extent.y, -extent.z, 1])
+      cords[1, :] = np.array([-extent.x, extent.y, -extent.z, 1])
+      cords[2, :] = np.array([-extent.x, -extent.y, -extent.z, 1])
+      cords[3, :] = np.array([extent.x, -extent.y, -extent.z, 1])
+      cords[4, :] = np.array([extent.x, extent.y, extent.z, 1])
+      cords[5, :] = np.array([-extent.x, extent.y, extent.z, 1])
+      cords[6, :] = np.array([-extent.x, -extent.y, extent.z, 1])
+      cords[7, :] = np.array([extent.x, -extent.y, extent.z, 1])
+      return cords
+
+  @staticmethod
+  def _vehicle_to_sensor(cords, vehicle, sensor):
+      """
+      Transforms coordinates of a vehicle bounding box to sensor.
+      """
+
+      world_cord = ClientSideBoundingBoxes._vehicle_to_world(cords, vehicle)
+      sensor_cord = ClientSideBoundingBoxes._world_to_sensor(world_cord, sensor)
+      return sensor_cord
+
+  @staticmethod
+  def _vehicle_to_world(cords, vehicle):
+      """
+      Transforms coordinates of a vehicle bounding box to world.
+      """
+      bb_transform = carla.Transform(vehicle.bounding_box.location)
+      bb_vehicle_matrix = ClientSideBoundingBoxes.get_matrix(bb_transform)
+      vehicle_world_matrix = ClientSideBoundingBoxes.get_matrix(vehicle.get_transform())
+      bb_world_matrix = np.dot(vehicle_world_matrix, bb_vehicle_matrix)
+      world_cords = np.dot(bb_world_matrix, np.transpose(cords))
+      return world_cords
+
+  @staticmethod
+  def _world_to_sensor(cords, sensor):
+      """
+      Transforms world coordinates to sensor.
+      """
+
+      sensor_world_matrix = ClientSideBoundingBoxes.get_matrix(sensor.get_transform())
+      world_sensor_matrix = np.linalg.inv(sensor_world_matrix)
+      sensor_cords = np.dot(world_sensor_matrix, cords)
+      return sensor_cords
+
+  @staticmethod
+  def get_matrix(transform):
+      """
+      Creates matrix from carla transform.
+      """
+      rotation = transform.rotation
+      location = transform.location
+      c_y = np.cos(np.radians(rotation.yaw))
+      s_y = np.sin(np.radians(rotation.yaw))
+      c_r = np.cos(np.radians(rotation.roll))
+      s_r = np.sin(np.radians(rotation.roll))
+      c_p = np.cos(np.radians(rotation.pitch))
+      s_p = np.sin(np.radians(rotation.pitch))
+      matrix = np.matrix(np.identity(4))
+      matrix[0, 3] = location.x
+      matrix[1, 3] = location.y
+      matrix[2, 3] = location.z
+      matrix[0, 0] = c_p * c_y
+      matrix[0, 1] = c_y * s_p * s_r - s_y * c_r
+      matrix[0, 2] = -c_y * s_p * c_r - s_y * s_r
+      matrix[1, 0] = s_y * c_p
+      matrix[1, 1] = s_y * s_p * s_r + c_y * c_r
+      matrix[1, 2] = -s_y * s_p * c_r + c_y * s_r
+      matrix[2, 0] = s_p
+      matrix[2, 1] = -c_p * s_r
+      matrix[2, 2] = c_p * c_r
+      return matrix
+
 
 def _bbox_inside(box1, box2):
   #coco box
@@ -93,6 +233,19 @@ def _bbox_to_coco_bbox(bbox):
 
 
 if __name__ == '__main__':
+  argparser = argparse.ArgumentParser(
+        description=__doc__)
+  argparser.add_argument(
+    '-R', '--orientation',
+    action='store_true',
+    help='if camera has its local orientation')
+  argparser.add_argument(
+    '-id',
+    type=str,
+    default="cam1",
+    help='which camera id')
+  args = argparser.parse_args()
+
   cats = ['Pedestrian', 'Car', 'Cyclist', 'Van', 'Truck',  'Person_sitting',
         'Tram', 'Misc', 'DontCare']
   cat_ids = {cat: i + 1 for i, cat in enumerate(cats)}
@@ -100,11 +253,33 @@ if __name__ == '__main__':
   IMG_H = 540
   IMG_W = 960
 
-  image = cv2.imread('/home/ubuntu/xwp/CenterNet/data/traffic_car/cam_sample/image_2/000053.png')
+  #image = cv2.imread('/home/ubuntu/xwp/CenterNet/data/traffic_car/cam_sample/image_2/000053.png')
+  image = cv2.imread('/home/ubuntu/xwp/datasets/multi_view_dataset/346/image_2/000064.png')
   calib = read_clib('./test_code/000000.txt')
-  anns = open('/home/ubuntu/xwp/CenterNet/data/traffic_car/cam_sample/label_2/000052.txt', 'r')
+  #anns = open('/home/ubuntu/xwp/CenterNet/data/traffic_car/cam_sample/label_2/000052.txt', 'r')
+  anns = open('/home/ubuntu/xwp/datasets/multi_view_dataset/346/label_2/000064.txt', 'r')
   ori_anns = []
   ret = {'images': [], 'annotations': [], "categories": []}
+
+  if  args.orientation:
+    sensors_definition_file = '/home/ubuntu/xwp/CenterNet/carla_ros/dataset.json'
+    if not os.path.exists(sensors_definition_file):
+      raise RuntimeError(
+          "Could not read sensor-definition from {}".format(sensors_definition_file))
+    with open(sensors_definition_file) as handle:
+      json_actors = json.loads(handle.read())
+
+    for actor in json_actors["objects"]:
+      actor_id = actor["id"]
+      if actor_id == args.id:
+        thecamera = actor
+    spawn_point = thecamera.pop("spawn_point")
+    rotation = Rotation(spawn_point.pop('yaw'),spawn_point.pop('roll'),spawn_point.pop('pitch'))
+    location = Location(spawn_point.pop('x'),spawn_point.pop('y'),spawn_point.pop('z'))
+    transform = Transform(rotation,location)
+    sensor_world_matrix = get_matrix(transform)
+    world_sensor_matrix = np.linalg.inv(sensor_world_matrix)
+
   for ann_ind, txt in enumerate(anns):
     tmp = txt[:-1].split(' ') #为了去掉末尾的\n
     cat_id = cat_ids[tmp[0]]
@@ -117,6 +292,8 @@ if __name__ == '__main__':
     rotation_y = float(tmp[14])
     
     box_3d = compute_box_3d(dim, location, rotation_y)
+    if  args.orientation:
+      box_3d = np.dot(world_sensor_matrix,box_3d)
     box_2d = project_to_image(box_3d, calib)
     img_size = np.asarray([IMG_W,IMG_H],dtype=np.int)
 
@@ -195,7 +372,7 @@ if __name__ == '__main__':
     box_crop[2] = box_crop[0] + box_crop[2]
     box_crop[3] = box_crop[1] + box_crop[3]
     box_crop = [int(x) for x  in box_crop]
-    #image = draw_box_3d(image,box_2d)
+    image = draw_box_3d(image,box_2d)
     image = draw_box_2d(image, box_crop)
     print(bbox_crop)
     cv2.imshow('image',image)

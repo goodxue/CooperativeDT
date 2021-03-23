@@ -1,0 +1,23 @@
+{   
+    "objects": 
+    [
+        {
+            "type": "sensor.camera.rgb",
+            "id" : "cam1",
+            "spawn_point":{"x":-64,"y":126.5,"z":5,"roll":0.0,"pitch":0.0,"yaw":-155},
+            "image_size_x":960,
+            "image_size_y":540,
+            "fov":90.0,
+            "sensor_tick":0.05
+        },
+        {
+            "type": "sensor.camera.rgb",
+            "id" : "cam2",
+            "spawn_point":{"x":-95,"y":125,"z":5,"roll":0.0,"pitch":0.0,"yaw":-30},
+            "image_size_x":960,
+            "image_size_y":540,
+            "fov":90.0,
+            "sensor_tick":0.05
+        }
+    ]
+}

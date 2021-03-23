@@ -217,7 +217,7 @@ def Spawn_the_vehicles(world,client,car_num):
 
     spawn_points = world.get_map().get_spawn_points()
     number_of_spawn_points = len(spawn_points)
-    args.number_of_vehicles=car_num[0]
+    args.number_of_vehicles=car_num
     if args.number_of_vehicles < number_of_spawn_points:
         random.shuffle(spawn_points)
     elif args.number_of_vehicles > number_of_spawn_points:
@@ -419,8 +419,8 @@ class ClientSideBoundingBoxes(object):
         Transforms world coordinates to sensor.
         """
 
-        sensor_world_matrix = ClientSideBoundingBoxes.get_matrix(sensor.get_transform())
-        world_sensor_matrix = np.linalg.inv(sensor_world_matrix)
+        sensor_world_matrix = ClientSideBoundingBoxes.get_matrix(sensor.get_transform()) #注意世界坐标其实就是相对世界原点的变换（平移旋转）矩阵，这点很重要
+        world_sensor_matrix = np.linalg.inv(sensor_world_matrix)  #相机的世界坐标求逆，将世界坐标转换到了相机的局部坐标！！！
         sensor_cords = np.dot(world_sensor_matrix, cords)
         return sensor_cords
 
@@ -452,7 +452,7 @@ class ClientSideBoundingBoxes(object):
         matrix[2, 2] = c_p * c_r
         return matrix
 
-def main(cam_type,cam_subset,weather_num,car_num_id):
+def main(weather_num):
     actor_list = []
     pygame.init()
 
@@ -464,7 +464,7 @@ def main(cam_type,cam_subset,weather_num,car_num_id):
     client.set_timeout(10.0)
     # cam_subset=1
 
-    world = client.load_world('Town05')
+    world = client.get_world()
     # weather = carla.WeatherParameters(
     #     cloudiness=0.0,
     #     precipitation=0.0,
@@ -476,7 +476,7 @@ def main(cam_type,cam_subset,weather_num,car_num_id):
     
     
     # 加入其他车辆
-    Spawn_the_vehicles(world,client,car_num[2])
+    Spawn_the_vehicles(world,client,car_num[0])
     ###########相机参数
     # cam_type='cam1'
     
@@ -489,7 +489,7 @@ def main(cam_type,cam_subset,weather_num,car_num_id):
     ###########相机参数
     # w_x,w_y,w_yaw,cam_H,cam_pitch=-116,100,100,4,90
 
-    sensors_definition_file = 'dataset.json'
+    sensors_definition_file = '/home/ubuntu/xwp/CenterNet/carla_ros/dataset.json'
     if not os.path.exists(sensors_definition_file):
         raise RuntimeError(
             "Could not read sensor-definition from {}".format(sensors_definition_file))
@@ -518,153 +518,156 @@ def main(cam_type,cam_subset,weather_num,car_num_id):
 
 
             spawn_point = sensor_spec.pop("spawn_point")
-            point = Transform(Location(x=spawn_point.pop("x"), y=spawn_point.pop("y"), z=spawn_point.pop("z")),
-                 Rotation(pitch=spawn_point.pop("pitch", 0.0), yaw=spawn_point.pop("yaw", 0.0), roll=spawn_point.pop("roll", 0.0)))
+            point = Transform(Location(x=spawn_point.pop("x"), y=-spawn_point.pop("y"), z=spawn_point.pop("z")),
+                 Rotation(pitch=-spawn_point.pop("pitch", 0.0), yaw=-spawn_point.pop("yaw", 0.0), roll=spawn_point.pop("roll", 0.0)))
             camera_bp = world.get_blueprint_library().find(sensor_type)
             camera_bp.set_attribute('image_size_x', str(sensor_spec.pop("image_size_x")))
             camera_bp.set_attribute('image_size_y', str(sensor_spec.pop("image_size_y")))
             camera_bp.set_attribute('fov', str(sensor_spec.pop("fov")))
+           # camera_bp.set_attribute('sensor_id',str(sensor_id))
 
             camera_rgb = world.spawn_actor(camera_bp,point)
+            camera_rgb.sensor_name = sensor_id
             actor_list.append(camera_rgb)
         except RuntimeError as e:
             raise RuntimeError("Setting up global sensors failed: {}".format(e))
+
+    out_path="/home/ubuntu/xwp/datasets/multi_view_dataset"
+    if not os.path.exists(out_path):
+        os.makedirs(out_path)
+
+    ######################################################file
+    with CarlaSyncMode(world, *actor_list, fps=20) as sync_mode:
+        count=0
+        k=0
+        while count<5000:
+        # while count<100:
+            count+=1
+            if should_quit():
+                return
+            clock.tick()
+            # Advance the simulation and wait for the data.
+            #snapshot, image_rgb,image_semseg = sync_mode.tick(timeout=2.0)
+            blobs = sync_mode.tick(timeout=2.0)
+            if count%10!=0:
+                continue
+            k+=1
+            print(k)
+
+            # img.append(image_rgb)
+            #image=image_rgb
+            # image1=image_semseg.convert(ColorConverter.CityScapesPalette)
+            # import pdb; pdb.set_trace()
+            images = blobs[1:]
+            snapshot = blobs[0]
+            fps = round(1.0 / snapshot.timestamp.delta_seconds)
+
             
+            world_snapshot = world.get_snapshot()
+
+            actual_actor=[world.get_actor(actor_snapshot.id) for actor_snapshot in world_snapshot]
+            got_vehicles=[actor for actor in actual_actor if actor.type_id.find('vehicle')!=-1]
+
+            vehicles_list = []
+            for camera_rgb in actor_list:
+                vehicles=[vehicle for vehicle in got_vehicles if vehicle.get_transform().location.distance(camera_rgb.get_transform().location)<50]
+                vehicles_list.append(vehicles)
+                cam_path = out_path + "/{}".format(camera_rgb.id)
+                if not os.path.exists(cam_path):
+                    os.makedirs(cam_path)
+                    os.makedirs(cam_path+"/label_2")
+                    os.makedirs(cam_path+"/image_2")
+                    os.makedirs(cam_path+"/calib")
+            # debug = world.debug
+            # for vehicle in vehicles:
+            #     debug.draw_box(carla.BoundingBox(vehicle.get_transform().location+vehicle.bounding_box.location, vehicle.bounding_box.extent), vehicle.get_transform().rotation, 0.05, carla.Color(255,0,0,0), life_time=0.05)
+            # import pdb; pdb.set_trace()
+            
+            for i,(camera_rgb, vehicles,image) in enumerate(zip(actor_list,vehicles_list,images)):
+                v=[] #filtered_vehicles
+                label_files=open("{}/{}/label_2/{:0>6d}.txt".format(out_path,camera_rgb.sensor_name,k), "w")
+                car_2d_bbox=[]
+                for car in vehicles:
+                    extent = car.bounding_box.extent
+                    ###############location
+                    car_location =car.bounding_box.location
+                    # car_location1=car.get_transform().location
+                    cords = np.zeros((1, 4))
+                    cords[0, :]=np.array([car_location.x,car_location.y,car_location.z, 1])
+                    cords_x_y_z = ClientSideBoundingBoxes._vehicle_to_sensor(cords, car, camera_rgb)[:3, :]
+                    cords_y_minus_z_x = np.concatenate([cords_x_y_z[1, :], -cords_x_y_z[2, :], cords_x_y_z[0, :]])
+                    ###############location
+                    bbox = np.transpose(np.dot(camera_coordinate(camera_rgb), cords_y_minus_z_x))
+                    camera_bbox = (np.concatenate([bbox[:, 0] / bbox[:, 2], bbox[:, 1] / bbox[:, 2], bbox[:, 2]], axis=1))
+                    # pdb.set_trace()
+                    camera_bbox_e = camera_bbox[0]
+                    if camera_bbox_e[:,0]<0 or camera_bbox_e[:,1]<0 or camera_bbox_e[:,2]<0:
+                        continue
+                    
+                    #bboxe = camera_bbox
+                    xmin,ymin,xmax,ymax=0,0,0,0
+                    bboxe = ClientSideBoundingBoxes.get_bounding_boxes([car], camera_rgb)
+                    if len(bboxe)==0:
+                        continue
+                    bboxe=bboxe[0]
+                    t_points = [(int(bboxe[i, 0]), int(bboxe[i, 1])) for i in range(8)]
+                    width_x=[int(bboxe[i, 0]) for i in range(8)]
+                    high_y=[int(bboxe[i, 1]) for i in range(8)]
+                    xmin,ymin,xmax,ymax=min(width_x),min(high_y),max(width_x),max(high_y)
+                    x_cen=(xmin+xmax)/2
+                    y_cen=(ymin+ymax)/2
+                    if x_cen<0 or y_cen<0 or x_cen>VIEW_WIDTH or y_cen>VIEW_HEIGHT:
+                        continue
+                    car_type, truncated, occluded, alpha= 'Car', 0, 0,0
+                    dh, dw,dl=extent.z*2,extent.y*2,extent.x*2
+                    cords_y_minus_z_x=np.array(cords_y_minus_z_x)
+                    ly, lz,lx=cords_y_minus_z_x[0][0],cords_y_minus_z_x[1][0],cords_y_minus_z_x[2][0]
+                    lz=lz+dh
+                    ry=(car.get_transform().rotation.yaw-camera_rgb.get_transform().rotation.yaw+90)*np.pi/180
+                    check_box=False
+                    for one_box in car_2d_bbox:
+                        xmi,ymi,xma,yma=one_box
+                        if xmin>xmi and ymin>ymi and xmax<xma and ymax<yma:
+                            check_box=True
+                    if check_box or np.sqrt(ly**2+lx**2)<3:
+                        continue
+                    car_2d_bbox.append([xmin,ymin,xmax,ymax])
+                    v.append(car)
+                    if ry>np.pi:
+                        ry-=np.pi
+                    if ry<-np.pi:
+                        ry+=np.pi
+                    # pdb.set_trace()
+                    txt="{} {} {} {} {} {} {} {} {:.4f} {:.4f} {:.4f} {:.4f} {:.4f} {:.4f} {} {}\n".format(car_type, truncated, occluded, alpha, xmin, ymin, xmax, ymax, dh, dw,
+                        dl,ly, lz, lx,  ry,car.id)
+                    label_files.write(txt)
+                label_files.close()
+                #print(cam_type,cam_subset,k,len(v))
+
+                #bounding_boxes = ClientSideBoundingBoxes.get_bounding_boxes(v, camera_rgb) 
+                ######################################################file
+                # pygame.image.save(display,'%s/image_1/%06d.png' % (out_path,k))       
+                image.save_to_disk('{}/{}/image_2/{:0>6d}.png'.format (out_path,camera_rgb.id,k))        
+
+    for camera_rgb in actor_list:
+        calib_files=open("{}/{}/calib/{:0>6d}.txt".format(out_path,camera_rgb.id,0), "w")
+        K=camera_coordinate(camera_rgb)
+
+        txt="P2: {} {} {} {} {} {} {} {} {}\n".format(  K[0][0],K[0][1],K[0][2],
+                                                    K[1][0],K[1][1],K[1][2],
+                                                    K[2][0],K[2][1],K[2][2])
+        calib_files.write(txt)
+        calib_files.close()
 
 
-    try:
+    print('destroying actors.')
+    for actor in actor_list:
+        actor.destroy()
 
-        out_path="~/xwp/datasets/multi_view_dataset"
-        if not os.path.exists(out_path):
-            os.makedirs(out_path)
-        
+    pygame.quit()
 
-        for camera_rgb in actor_list:
-            calib_files=open("%s/%s/calib/%.6d.txt"%(out_path,camera_rgb.id,0), "w")
-            K=camera_coordinate(camera_rgb)
+    return
 
-            txt="P2: {} {} {} {} {} {} {} {} {}\n".format(  K[0][0],K[0][1],K[0][2],
-                                                        K[1][0],K[1][1],K[1][2],
-                                                        K[2][0],K[2][1],K[2][2])
-            calib_files.write(txt)
-            calib_files.close()
-
-        ######################################################file
-        with CarlaSyncMode(world, actor_list, fps=20) as sync_mode:
-            count=0
-            k=0
-            while count<5000:
-            # while count<100:
-                count+=1
-                if should_quit():
-                    return
-                clock.tick()
-                # Advance the simulation and wait for the data.
-                #snapshot, image_rgb,image_semseg = sync_mode.tick(timeout=2.0)
-                blobs = sync_mode.tick(timeout=2.0)
-                if count%10!=0:
-                    continue
-                k+=1
-
-                # img.append(image_rgb)
-                #image=image_rgb
-                # image1=image_semseg.convert(ColorConverter.CityScapesPalette)
-                # import pdb; pdb.set_trace()
-                images = blobs[1:]
-                snapshot = blobs[0]
-                fps = round(1.0 / snapshot.timestamp.delta_seconds)
-
-                
-                world_snapshot = world.get_snapshot()
-
-                actual_actor=[world.get_actor(actor_snapshot.id) for actor_snapshot in world_snapshot]
-                got_vehicles=[actor for actor in actual_actor if actor.type_id.find('vehicle')!=-1]
-
-                vehicles_list = []
-                for camera_rgb in actor_list:
-                    vehicles=[vehicle for vehicle in got_vehicles if vehicle.get_transform().location.distance(camera_rgb.get_transform().location)<80]
-                    vehicles_list.append(vehicles)
-                # debug = world.debug
-                # for vehicle in vehicles:
-                #     debug.draw_box(carla.BoundingBox(vehicle.get_transform().location+vehicle.bounding_box.location, vehicle.bounding_box.extent), vehicle.get_transform().rotation, 0.05, carla.Color(255,0,0,0), life_time=0.05)
-                # import pdb; pdb.set_trace()
-                
-                for i,(camera_rgb, vehicles,image) in enumerate(zip(actor_list,vehicles_list,images)):
-                    v=[] #filtered_vehicles
-                    label_files=open("%s/%s/label_2/%.6d.txt"%(out_path,camera_rgb.id,k), "w")
-                    car_2d_bbox=[]
-                    for car in vehicles:
-                        extent = car.bounding_box.extent
-                        ###############location
-                        car_location =car.bounding_box.location
-                        # car_location1=car.get_transform().location
-                        cords = np.zeros((1, 4))
-                        cords[0, :]=np.array([car_location.x,car_location.y,car_location.z, 1])
-                        cords_x_y_z = ClientSideBoundingBoxes._vehicle_to_sensor(cords, car, camera_rgb)[:3, :]
-                        cords_y_minus_z_x = np.concatenate([cords_x_y_z[1, :], -cords_x_y_z[2, :], cords_x_y_z[0, :]])
-                        ###############location
-                        bbox = np.transpose(np.dot(camera_coordinate(camera_rgb), cords_y_minus_z_x))
-                        camera_bbox = (np.concatenate([bbox[:, 0] / bbox[:, 2], bbox[:, 1] / bbox[:, 2], bbox[:, 2]], axis=1))[0]
-                        # pdb.set_trace()
-                        if camera_bbox[:,0]<0 or camera_bbox[:,1]<0 or camera_bbox[:,2]<0:
-                            continue
-                        
-                        xmin,ymin,xmax,ymax=0,0,0,0
-                        bboxe = ClientSideBoundingBoxes.get_bounding_boxes([car], camera_rgb)
-                        if len(bboxe)==0:
-                            continue
-                        bboxe=bboxe[0]
-                        t_points = [(int(bboxe[i, 0]), int(bboxe[i, 1])) for i in range(8)]
-                        width_x=[int(bboxe[i, 0]) for i in range(8)]
-                        high_y=[int(bboxe[i, 1]) for i in range(8)]
-                        xmin,ymin,xmax,ymax=min(width_x),min(high_y),max(width_x),max(high_y)
-                        x_cen=(xmin+xmax)/2
-                        y_cen=(ymin+ymax)/2
-                        if x_cen<0 or y_cen<0 or x_cen>VIEW_WIDTH or y_cen>VIEW_HEIGHT:
-                            continue
-                        car_type, truncated, occluded, alpha= 'Car', 0, 0,0
-                        dh, dw,dl=extent.z*2,extent.y*2,extent.x*2
-                        cords_y_minus_z_x=np.array(cords_y_minus_z_x)
-                        ly, lz,lx=cords_y_minus_z_x[0][0],cords_y_minus_z_x[1][0],cords_y_minus_z_x[2][0]
-                        lz=lz+dh
-                        ry=(car.get_transform().rotation.yaw-camera_rgb.get_transform().rotation.yaw+90)*np.pi/180
-                        check_box=False
-                        for one_box in car_2d_bbox:
-                            xmi,ymi,xma,yma=one_box
-                            if xmin>xmi and ymin>ymi and xmax<xma and ymax<yma:
-                                check_box=True
-                        if check_box or np.sqrt(ly**2+lx**2)<3:
-                            continue
-                        car_2d_bbox.append([xmin,ymin,xmax,ymax])
-                        v.append(car)
-                        if ry>np.pi:
-                            ry-=np.pi
-                        if ry<-np.pi:
-                            ry+=np.pi
-                        # pdb.set_trace()
-                        txt="{} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {}\n".format(car_type, truncated, occluded, alpha, xmin, ymin, xmax, ymax, dh, dw,
-                            dl,ly, lz, lx,  ry,car.id)
-                        label_files.write(txt)
-                    label_files.close()
-                    print(cam_type,cam_subset,k,len(v))
-
-                    #bounding_boxes = ClientSideBoundingBoxes.get_bounding_boxes(v, camera_rgb) 
-                    ######################################################file
-                    # pygame.image.save(display,'%s/image_1/%06d.png' % (out_path,k))       
-                    image.save_to_disk('%s/%s/image_2/%06d.png' % (out_path,camera_rgb.id,k))           
-
-
-    finally:
-
-        print('destroying actors.')
-        for actor in actor_list:
-            actor.destroy()
-
-        pygame.quit()
-
-        return
-def open_serve():
-    os.system("bash run_carla.sh")
 
 def multipro():
     all_cam=['cam16']
@@ -684,8 +687,6 @@ def multipro():
                     print(cam_subset_id)
                     cam_subset_id+=1
                     continue
-                p1 = multiprocessing.Process(target=open_serve,args=())
-                p2 = multiprocessing.Process(target=main,args=(all_cam[cam_id],cam_subset_id,weather_num_id,num_id))
                 p1.start()
                 time.sleep(5)
                 p2.start()
@@ -700,7 +701,7 @@ def multipro():
                 cam_subset_id+=1
     print('done.')
 if __name__ == '__main__':
-    multipro()
+    main(4)
     # all_cam=['cam3']
     # cam_id=0
     # cam_subset_id=1
