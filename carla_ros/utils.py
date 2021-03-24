@@ -155,3 +155,93 @@ class ClientSideBoundingBoxes(object):
         matrix[2, 1] = -c_p * s_r
         matrix[2, 2] = c_p * c_r
         return matrix
+
+def compute_box_3d(dim, location, rotation_y):
+  # dim: 3
+  # location: 3
+  # rotation_y: 1
+  # return: 8 x 3
+  c, s = np.cos(rotation_y), np.sin(rotation_y)
+  R = np.array([[c, 0, s], [0, 1, 0], [-s, 0, c]], dtype=np.float32)
+  l, w, h = dim[2], dim[1], dim[0]
+  x_corners = [l/2, l/2, -l/2, -l/2, l/2, l/2, -l/2, -l/2]
+  y_corners = [0,0,0,0,-h,-h,-h,-h]
+  z_corners = [w/2, -w/2, -w/2, w/2, w/2, -w/2, -w/2, w/2]
+
+  corners = np.array([x_corners, y_corners, z_corners], dtype=np.float32)
+  corners_3d = np.dot(R, corners) 
+  corners_3d = corners_3d + np.array(location, dtype=np.float32).reshape(3, 1)
+  return corners_3d.transpose(1, 0)
+
+def project_to_image(pts_3d, P):
+  # pts_3d: n x 3
+  # P: 3 x 4
+  # return: n x 2
+#   pts_3d_homo = np.concatenate(
+#     [pts_3d, np.ones((pts_3d.shape[0], 1), dtype=np.float32)], axis=1)
+  pts_2d = np.dot(P, pts_3d.transpose(1, 0)).transpose(1, 0)
+  pts_2d = pts_2d[:, :2] / pts_2d[:, 2:]
+  # import pdb; pdb.set_trace()
+  return pts_2d
+
+def draw_box_3d(image, corners, c=(0, 0, 255)):
+  face_idx = [[0,1,5,4],
+              [1,2,6, 5],
+              [2,3,7,6],
+              [3,0,4,7]]
+  for ind_f in range(3, -1, -1):
+    f = face_idx[ind_f]
+    for j in range(4):
+      cv2.line(image, (corners[f[j], 0], corners[f[j], 1]),
+               (corners[f[(j+1)%4], 0], corners[f[(j+1)%4], 1]), c, 1, lineType=cv2.LINE_AA)
+    if ind_f == 0:
+      cv2.line(image, (corners[f[0], 0], corners[f[0], 1]),
+               (corners[f[2], 0], corners[f[2], 1]), c, 1, lineType=cv2.LINE_AA)
+      cv2.line(image, (corners[f[1], 0], corners[f[1], 1]),
+               (corners[f[3], 0], corners[f[3], 1]), c, 1, lineType=cv2.LINE_AA)
+  return image
+
+def draw_box_2d(image, corners, c=(255,0,0)):
+  face_idx = [[0,1,2,1],
+              [2,1,2,3],
+              [2,3,0,3],
+              [0,3,0,1]]
+  for ind_f in range(4):
+    f = face_idx[ind_f]
+    cv2.line(image, (corners[f[0]],corners[f[1]]),
+                (corners[f[2]], corners[f[3]]), c, 1, lineType=cv2.LINE_AA)
+  return image
+
+
+def read_clib(calib_path):
+  f = open(calib_path, 'r')
+  for i, line in enumerate(f):
+    if i == 0:
+      calib = np.array(line[:-1].split(' ')[1:], dtype=np.float32)
+      calib = calib.reshape(3, 3)
+      return calib
+
+outsize = 384
+world_size = 64
+def add_bird_view(rects, center_thresh=0.3, img_id='bird',outsize=384):
+    bird_view = np.ones((out_size, out_size, 3), dtype=np.uint8) * 230
+    for rect in rects:
+        rect = rect[:4, [0, 2]]
+        for k in range(4):
+            rect[k] = project_3d_to_bird(rect[k])
+            # cv2.circle(bird_view, (rect[k][0], rect[k][1]), 2, lc, -1)
+            cv2.polylines(
+                bird_view,[rect.reshape(-1, 1, 2).astype(np.int32)],
+                True,lc,2,lineType=cv2.LINE_AA)
+            # for e in [[0, 1]]:
+            #     t = 4 if e == [0, 1] else 1
+            #     cv2.line(bird_view, (rect[e[0]][0], rect[e[0]][1]),
+            #             (rect[e[1]][0], rect[e[1]][1]), lc, t,
+            #             lineType=cv2.LINE_AA)
+    return bird_view
+
+def project_3d_to_bird(self, pt):
+    pt[0] += world_size / 2
+    pt[1] = world_size - pt[1]
+    pt = pt * out_size / world_size
+    return pt.astype(np.int32)

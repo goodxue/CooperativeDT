@@ -95,17 +95,33 @@ if __name__ == "__main__":
         vehicles_list.append({'bbox':bbox,'dim':dim,'location':location,'rotation':rotation_y})
 
     translated_vehicles = []
+    cam1_world_invmatrix = np.linalg.inv(cam_loc_dict['cam1'])
+    cam2_world_matrix = cam_loc_dict['cam2']
     for i, (vehicle_matrix, vehicle) in enumerate(zip(vehicles_loc_list,vehicles_list)):
-        cord = np.zeros((1,4))
-        cord[0][0] = -vehicle['location'][2]
-        cord[0][1] = vehicle['location'][0]
-        cord[0][2] = -vehicle['location'][1]
-        cord[0][3] = 1
-        cam1_world_invmatrix = np.linalg.inv(cam_loc_dict['cam1'])
+        # cord = np.zeros((1,4))
+        # cord[0][0] = vehicle['location'][2]
+        # cord[0][1] = vehicle['location'][0]
+        # cord[0][2] = -vehicle['location'][1]
+        # cord[0][3] = 1
+        bb_cord = compute_box_3d(vehicle['dim'],vehicle['location'],vehicle['rotation'])
+        bb_cord = np.hstack(bb_cord,np.array([[1]]*8))
         #print(cam_loc_dict)
-        cam2_world_matrix = cam_loc_dict['cam2']
+        
         car_cam2_matrix = vehicle_matrix
-        cord_cam1 = np.dot(cam1_world_invmatrix,np.dot(cam2_world_matrix,np.transpose(cord)))
+        #cord_cam1 = np.dot(cam1_world_invmatrix,np.dot(cam2_world_matrix,np.transpose(cord)))
+        bb_in_cam1 = np.dot(cam1_world_invmatrix,np.dot(cam2_world_matrix,np.dot(vehicle_matrix,np.transpose(bb_cord))))
+        cord_cam1 = np.transpose(np.concatenate([bb_in_cam1[1,:],-bb_in_cam1[2,:],bb_in_cam1[0,:]])) #8x3
         translated_vehicles.append(cord_cam1)
     #print(cam_loc_dict)
-    print(translated_vehicles)
+    #print(translated_vehicles)
+    calib = read_clib('/home/ubuntu/xwp/datasets/multi_view_dataset/346/calib/000000.txt')
+    image = cv2.imread('/home/ubuntu/xwp/datasets/multi_view_dataset/346/image_2/000128.png')
+    for box_3d in translated_vehicles:
+        box_2d = project_to_image(box_3d, calib)
+        image = draw_box_3d(image,box_2d)
+        cv2.imshow('image',image)
+        cv2.waitKey()
+    bird_view = add_bird_view(translated_vehicles)
+    cv2.imshow('bird',bird_view)
+    cv2.waitKey()
+
