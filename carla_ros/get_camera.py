@@ -36,6 +36,8 @@ try:
 except ImportError:
     import Queue as queue
 
+from utils import *
+
 if __name__ =="__main__":
     client = carla.Client('localhost', 2000,1)
     client.set_timeout(10.0)
@@ -47,6 +49,7 @@ if __name__ =="__main__":
     got_cameras=[actor for actor in actual_actor if actor.type_id.find('rgb')!=-1]
 
     for camera_rgb in got_cameras:
-        print(camera_rgb.get_transform())
+        tr = camera_rgb.get_transform()
+        print("matrix: ",ClientSideBoundingBoxes.get_matrix(tr))
     
     print("finished")
