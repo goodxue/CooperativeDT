@@ -12,6 +12,7 @@ from .dataset.pascal import PascalVOC
 from .dataset.kitti import KITTI
 from .dataset.coco_hp import COCOHP
 from .dataset.traffic_car_kitti import KITTI as TRATTIC_CAR
+from .dataset.multiview_kitti import KITTI as MULTIVIEW
 
 
 dataset_factory = {
@@ -19,7 +20,8 @@ dataset_factory = {
   'pascal': PascalVOC,
   'kitti': KITTI,
   'coco_hp': COCOHP,
-  'traffic_car': TRATTIC_CAR
+  'traffic_car': TRATTIC_CAR,
+  'multiview': MULTIVIEW
 }
 
 _sample_factory = {

@@ -3,17 +3,17 @@ import pickle
 import json
 import numpy as np
 import cv2
-DATASET_PATH = '../../data/traffic_car/'
+DATASET_PATH = '/home/ubuntu/xwp/datasets/multi_view_dataset'
 DEBUG = False
 # VAL_PATH = DATA_PATH + 'training/label_val/'
 import os
 from tqdm.contrib import tzip
 import shutil
 
-TRAIN_NUM = 7000
-VAL_NUM = 1500
-TEST_NUM = 1500
-CAM_SETS = ['cam1','cam2','cam4','cam5','cam6','cam7']
+TRAIN_NUM = 400
+VAL_NUM = 50
+TEST_NUM = 50
+CAM_SETS = ['346','347']
 
 CAM_NUM = ''
 OUT_PATH = os.path.join(DATASET_PATH, 'cam_sample')

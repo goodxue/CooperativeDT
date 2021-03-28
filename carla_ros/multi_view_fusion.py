@@ -170,9 +170,9 @@ if __name__ == "__main__":
         translated_rotation.append(ry_world2cam1)
         # print('cam1_world:',cam1_to_world)
         # print('cam2_world:',cam2_to_world)
-        # print('cam2ry_2_world',ry_cam22world)
-        # print('ry_2_cam1',ry_world2cam1)
-        # print('ry_cam1_gt',cam1_v['rotation'])
+        print('cam2ry_2_world',ry_cam22world)
+        print('ry_2_cam1',ry_world2cam1)
+        print('ry_cam1_gt',cam1_v['rotation'])
         # print('cam2_to_cam1',p_in_cam1)
         # print('cam1_gt',cord_v1)
     #print(cam_loc_dict)
@@ -191,7 +191,7 @@ if __name__ == "__main__":
         # cv2.imshow('image',image)
         # cv2.waitKey()
 
-    bird_view = add_bird_view(box3d_list)
-    cv2.imshow('bird',bird_view)
-    cv2.waitKey()
+    # bird_view = add_bird_view(box3d_list)
+    # cv2.imshow('bird',bird_view)
+    # cv2.waitKey()
 

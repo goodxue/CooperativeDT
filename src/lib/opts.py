@@ -32,6 +32,12 @@ class opts(object):
                                   'Reloaded the optimizer parameter and '
                                   'set load_model to model_last.pth '
                                   'in the exp dir if load_model is empty.') 
+    self.parser.add_argument('--multiview', default='/home/ubuntu/xwp/datasets/multi_view_dataset/home/ubuntu/xwp/datasets/multi_view_dataset', 
+                             help='path to cam number. ')
+    self.parser.add_argument('--camn', default='346', 
+                             help='cam number to view')
+    self.parser.add_argument('--img', default='000128.png', 
+                             help='image number to fuse')
 
     # system
     self.parser.add_argument('--gpus', default='0', 
@@ -247,6 +253,8 @@ class opts(object):
     opt.lr_step = [int(i) for i in opt.lr_step.split(',')]
     opt.test_scales = [float(i) for i in opt.test_scales.split(',')]
 
+    opt.camn = [int(cam) for cam in opt.camn.split(',')]
+
     opt.fix_res = not opt.keep_res
     print('Fix size testing.' if opt.fix_res else 'Keep resolution testing.')
     opt.reg_offset = not opt.not_reg_offset
@@ -365,7 +373,7 @@ class opts(object):
                      [11, 12], [13, 14], [15, 16]]},
       'ddd': {'default_resolution': [544, 960], 'num_classes': 2, 
                 'mean': [0.485, 0.456, 0.406], 'std': [0.229, 0.224, 0.225],
-                'dataset': 'traffic_car'},
+                'dataset': 'multiview'},
     }
     class Struct:
       def __init__(self, entries):
