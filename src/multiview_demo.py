@@ -15,6 +15,7 @@ from utils.multiview_utils import *
 import json
 import logging
 import time
+import utils.bbox_utils as bbox_utils
 
 image_ext = ['jpg', 'jpeg', 'png', 'webp']
 video_ext = ['mp4', 'mov', 'avi', 'mkv']
@@ -97,7 +98,7 @@ def demo(opt):
           loc  = dets[cat][i, 8:11]
           rot_y = dets[cat][i, 11]
           loc_carla = [loc[2],loc[0],-loc[1],1]
-          cord_p = np.zeros((1,4))
+          cord_p = np.ones((1,4))
           cord_p[0] = np.array(loc_carla)
           loc_world = np.dot(cam2_world_matrix,np.transpose(cord_p))
           loc_cam1 = np.dot(cam1_world_invmatrix, loc_world)

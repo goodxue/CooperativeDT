@@ -274,9 +274,46 @@ def add_bird_view(rects, bird_view=None,center_thresh=0.3, img_id='bird',outsize
             #             lineType=cv2.LINE_AA)
     return bird_view
 
+#draw two camera field of view in BEV, relatived to camera tatget
+def cam_bird_view(camtarget,camsource,bird_view=None,FOV=90,lc1=(100,100,100),lc2=(255,255,0)):
+    #camtarget(Transform)
+    #camsource(Transform)
+    if bird_view is None:
+        bird_view = np.ones((outsize, outsize, 3), dtype=np.uint8) * 230
+    # cam1_matrix = ClientSideBoundingBoxes.get_matrix(camtarget)
+    # cam2_matrix = ClientSideBoundingBoxes.get_matrix(camtarget)
+    #cam target
+    cam1_point = (int(outsize/2), int(outsize * 2 / 3))
+    cv2.line(bird_view, cam1_point,
+        (int(cam1_point[0]+outsize/2), int(cam1_point[1]-outsize/2)), lc1, 1,
+        lineType=cv2.LINE_AA)
+    cv2.line(bird_view, cam1_point,
+        (int(cam1_point[0]-outsize/2), int(cam1_point[1]-outsize/2)), lc1, 1,
+        lineType=cv2.LINE_AA)
+    
+    #cam source
+    # cord_p = np.zeros((1,4))
+    # cord_p[0][3] = 1
+    pol = outsize / world_size
+    cam2_point = (int(cam1_point[0]-pol*(camtarget.location.y-camsource.location.y)),int(cam1_point[1]-pol*(camtarget.location.x-camsource.location.x)))
+    yaw = -(camtarget.rotation.yaw-camsource.rotation.yaw)
+    cv2.line(bird_view, cam2_point,
+        (int(cam2_point[0]+pol*outsize * np.cos(np.radians(yaw-FOV/2))), int(cam2_point[1]-pol*outsize*np.sin(np.radians(yaw-FOV/2)))), lc2, 1,
+        lineType=cv2.LINE_AA)
+    cv2.line(bird_view, cam2_point,
+        (int(cam2_point[0]+pol*outsize * np.cos(np.radians(yaw+FOV/2))), int(cam2_point[1]-pol*outsize*np.sin(np.radians(yaw+FOV/2)))), lc2, 1,
+        lineType=cv2.LINE_AA)
+    # cv2.line(bird_view, cam2_point,
+    #     (cam2_point[0]-world_size/2, cam2_point[1]-world_size/2), lc2, 1,
+    #     lineType=cv2.LINE_AA)
+    return bird_view
+
+
+
+
 def project_3d_to_bird(pt):
     pt[0] += world_size / 2
-    pt[1] = world_size - pt[1] - world_size / 2
+    pt[1] = world_size - pt[1] - world_size / 3
     pt = pt * outsize / world_size
     return pt.astype(np.int32)
 
