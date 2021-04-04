@@ -8,12 +8,14 @@ import time
 import csv
 import cv2
 import pycocotools.coco as coco
+import random
 try:
     import numpy as np
 except ImportError:
     raise RuntimeError('cannot import numpy, make sure numpy package is installed')
 
 from utils import *
+import src.lib.utils.bbox_utils as bu
 
 argparser = argparse.ArgumentParser(
         description=__doc__)
@@ -87,7 +89,7 @@ if __name__ == "__main__":
         bbox = [float(tmp[4]), float(tmp[5]), float(tmp[6]), float(tmp[7])]
         dim = [float(tmp[8]), float(tmp[9]), float(tmp[10])]
         location = [float(tmp[11]), float(tmp[12]), float(tmp[13])]
-        rotation_y = float(tmp[14])
+        rotation_y = float(tmp[14]) + random.uniform(-0.5,0.5)
         Id = int(tmp[15])
         rotation_y = rotation_y * 180 /np.pi
         loc = Location(x=location[0],y=location[1],z=location[2])
@@ -101,6 +103,7 @@ if __name__ == "__main__":
     camgt = camgt_list[1]
     vehicles_loc_list = []
     vehicles_list = []
+    vehicle_list_v = []
     for ann_ind, txt in enumerate(camgt):
         tmp = txt.split(' ')
         #cat_id = cat_ids[tmp[0]]
@@ -110,17 +113,20 @@ if __name__ == "__main__":
         bbox = [float(tmp[4]), float(tmp[5]), float(tmp[6]), float(tmp[7])]
         dim = [float(tmp[8]), float(tmp[9]), float(tmp[10])]
         location = [float(tmp[11]), float(tmp[12]), float(tmp[13])]
-        rotation_y = float(tmp[14])
+        rotation_y1 = float(tmp[14]) + random.uniform(-0.5,0.5)
         Id = int(tmp[15])
-        rotation_y = rotation_y * 180 /np.pi
+        rotation_y = rotation_y1 * 180 /np.pi
         loc = Location(x=location[0],y=location[1],z=location[2])
         rot = Rotation(yaw = rotation_y)
         trans = Transform(location=loc,rotation=rot)
         vehicle_matrix = ClientSideBoundingBoxes.get_matrix(trans)
         vehicles_loc_list.append(vehicle_matrix)
         vehicles_list.append({'bbox':bbox,'dim':dim,'location':location,'rotation':rotation_y,'id':Id})
+        tv1 = CamVehicle(*location,*dim,rotation_y1)
+        vehicle_list_v.append(tv1)
 
     translated_vehicles = []
+    cam1_vehicles = []
     translated_points = []
     translated_rotation = []
     cam1_world_invmatrix = np.linalg.inv(cam_loc_dict['cam1'])
@@ -128,28 +134,32 @@ if __name__ == "__main__":
     cam1_world_matrix = cam_loc_dict['cam1']
     # print("cam1: ",cam_loc_dict['cam1'])
     # print("cam2: ",cam2_world_matrix)
+    for v1 in vehicles_list_1:
+        # if v1['id'] == vehicle['id']:
+        #     cam1_v = v1
+        #     cord_v1[0][0] = v1['location'][2] + random.random()
+        #     cord_v1[0][1] = v1['location'][0] + random.random()
+        #     cord_v1[0][2] = -v1['location'][1] + random.random()
+        #     cord_v1[0][3] = 1
+        tv1 = CamVehicle(v1['location'][0],v1['location'][1],v1['location'][2],*v1['dim'],v1['rotation']*np.pi/180)
+        cam1_vehicles.append(tv1)
+    print(len(cam1_vehicles))
     for i, (vehicle_matrix, vehicle) in enumerate(zip(vehicles_loc_list,vehicles_list)):
         cord_p = np.zeros((1,4))
-        cord_p[0][0] = vehicle['location'][2]
-        cord_p[0][1] = vehicle['location'][0]
-        cord_p[0][2] = -vehicle['location'][1]
+        cord_p[0][0] = vehicle['location'][2] + random.uniform(-0.4,0.4)
+        cord_p[0][1] = vehicle['location'][0] + random.uniform(-0.4,0.4)
+        cord_p[0][2] = -vehicle['location'][1] + random.uniform(-0.4,0.4)
         cord_p[0][3] = 1
         # bb_cord = compute_box_3d(vehicle['dim'],vehicle['location'],vehicle['rotation'])
         # bb_cord = np.hstack((bb_cord,np.array([[1]]*8)))
         #print(cam_loc_dict)
 
         #cam1
-        cam1_v = None
-        cord_v1 = np.zeros((1,4))
-        for v1 in vehicles_list_1:
-            if v1['id'] == vehicle['id']:
-                cam1_v = v1
-                cord_v1[0][0] = v1['location'][2]
-                cord_v1[0][1] = v1['location'][0]
-                cord_v1[0][2] = -v1['location'][1]
-                cord_v1[0][3] = 1
+        #cam1_v = None
+        #cord_v1 = np.zeros((1,4))
         
-        cam1_to_world = np.dot(cam1_world_matrix,np.transpose(cord_v1))
+        
+        #cam1_to_world = np.dot(cam1_world_matrix,np.transpose(cord_v1))
         
         car_cam2_matrix = vehicle_matrix
         #cord_cam1 = np.dot(cam1_world_invmatrix,np.dot(cam2_world_matrix,np.transpose(cord)))
@@ -180,9 +190,13 @@ if __name__ == "__main__":
     #print(translated_points)
     calib = read_clib('/home/ubuntu/xwp/datasets/multi_view_dataset/346/calib/000000.txt')
     image = cv2.imread('/home/ubuntu/xwp/datasets/multi_view_dataset/346/image_2/000128.png')
+    image2 = cv2.imread('/home/ubuntu/xwp/datasets/multi_view_dataset/347/image_2/000128.png')
     box3d_list = []
+    box3d1_list = []
     for vehicle in translated_vehicles:
         box3d_list.append(vehicle.compute_box_3d())
+    for v1 in cam1_vehicles:
+        box3d1_list.append(v1.compute_box_3d())
     for box3d in box3d_list:
         #print(box_3d)
         box_2d = project_to_image(box3d, calib)
@@ -190,10 +204,27 @@ if __name__ == "__main__":
         image = draw_box_3d(image,box_2d)
         # cv2.imshow('image',image)
         # cv2.waitKey()
+    for tv in vehicle_list_v:
+        #print(box_3d)
+        box_2d = project_to_image(tv.compute_box_3d(), calib)
+        #print(box_2d)
+        image2 = draw_box_3d(image2,box_2d)
+    for box3d in box3d1_list:
+        #print(box_3d)
+        box_2d = project_to_image(box3d, calib)
+        #print(box_2d)
+        image = draw_box_3d(image,box_2d,c=(0,255,255))
+
+    fused = bu.box3d_matching(box3d1_list,box3d_list,iou_threshold=0.1)
+    #print(fused.shape)
 
     bird_view = add_bird_view(box3d_list)
+    bird_view = add_bird_view(box3d1_list,bird_view=bird_view,lc=(12, 250, 152),lw=1)
     bird_view = cam_bird_view(cam_point_dict['cam1'],cam_point_dict['cam2'],bird_view)
+    fused_bird = add_bird_view(fused)
     cv2.imshow('bird',bird_view)
     cv2.imshow('img',image)
+    cv2.imshow('img2',image2)
+    cv2.imshow('fbird',fused_bird)
     cv2.waitKey()
 

@@ -4,6 +4,7 @@
 import numpy as np, copy
 from numba import jit
 from scipy.spatial import ConvexHull
+from scipy.optimize import linear_sum_assignment
 
 #@jit          
 def poly_area(x,y):
@@ -72,6 +73,81 @@ def polygon_clip(subjectPolygon, clipPolygon):
 		cp1 = cp2
 		if len(outputList) == 0: return None
 	return (outputList)
+
+def box3d_matching(box3d1,box3d2,iou_threshold=0.01,fusion=None):
+	'''
+	Input:
+		box3d1: Nx8x3
+		box3d2: Nx8x3 (in the same camera cordinate)
+		iou_threshold: float
+	Output:
+		fusedboxes: ndarray((box3d1_index,box3d2_index)) : Mx1x2
+	'''
+	ret = []
+	iou_matrix = np.zeros((len(box3d1), len(box3d2)), dtype=np.float32)
+	for i, box1 in enumerate(box3d1):
+		for j, box2 in enumerate(box3d2):
+			iou_matrix[i,j] = iou3d(box1,box2)[0]
+	
+	row_ind, col_ind = linear_sum_assignment(-iou_matrix)      # hougarian algorithm
+	matched_indices = np.stack((row_ind, col_ind), axis=1)
+
+	unmatched1 = []
+	unmatched2 = []
+	for d, det in enumerate(box3d1):
+		if (d not in matched_indices[:, 0]): unmatched1.append(det)
+	
+	for d, det in enumerate(box3d2):
+		if (d not in matched_indices[:, 1]): unmatched2.append(det)
+
+	
+	for m in matched_indices:
+		if (iou_matrix[m[0], m[1]] < iou_threshold):
+			ret.append(box3d1[m[0]])
+			ret.append(box3d2[m[1]])
+		else: ret.append(box3d1[m[0]] if fusion == None else fusion(box3d1[m[0]],box3d2[m[1]]))
+
+	return ret + unmatched1 + unmatched2
+
+def box3d_matching_index(box3d1,box3d2,iou_threshold=0.01,fusion=None):
+	'''
+	Input:
+		box3d1: Nx8x3
+		box3d2: Nx8x3 (in the same camera cordinate)
+		iou_threshold: float
+	Output:
+		fusedboxes: ndarray((box3d1_index,box3d2_index)) : Mx1x2
+	'''
+	ret = []
+	iou_matrix = np.zeros((len(box3d1), len(box3d2)), dtype=np.float32)
+	for i, box1 in enumerate(box3d1):
+		for j, box2 in enumerate(box3d2):
+			iou_matrix[i,j] = iou3d(box1,box2)[0]
+	
+	row_ind, col_ind = linear_sum_assignment(-iou_matrix)      # hougarian algorithm
+	matched_indices = np.stack((row_ind, col_ind), axis=1)
+
+	unmatched1 = []
+	unmatched2 = []
+	for d, det in enumerate(box3d1):
+		if (d not in matched_indices[:, 0]): unmatched1.append(d)
+	
+	for d, det in enumerate(box3d2):
+		if (d not in matched_indices[:, 1]): unmatched2.append(d)
+
+	
+	for m in matched_indices:
+		if (iou_matrix[m[0], m[1]] < iou_threshold):
+			unmatched1.append(m[0])
+			unmatched2.append(m[1])
+		else: ret.append(m)
+	
+	if (len(ret) == 0): 
+		ret = np.empty((0, 2),dtype=int)
+	else: ret = np.concatenate(ret, axis=0)
+
+	return ret , np.array(unmatched1) , np.array(unmatched2)
+
 
 def iou3d(corners1, corners2):
 	''' Compute 3D bounding box IoU, only working for object parallel to ground

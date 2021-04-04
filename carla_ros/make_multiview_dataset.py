@@ -471,8 +471,8 @@ def main(weather_num):
     #     sun_altitude_angle=50.0)
 
     
-    world.set_weather(all_weather[weather_num])
-
+    #world.set_weather(all_weather[weather_num])
+    world.set_weather(getattr(carla.WeatherParameters, "ClearNoon"))
     
     
     # 加入其他车辆

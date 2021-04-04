@@ -254,9 +254,9 @@ def read_clib(calib_path):
             calib = calib.reshape(3, 3)
             return calib
 
-outsize = 384
+outsize = 512
 world_size = 128
-def add_bird_view(rects, bird_view=None,center_thresh=0.3, img_id='bird',outsize=384,lc=(250, 152, 12)):
+def add_bird_view(rects, bird_view=None,center_thresh=0.3, img_id='bird',outsize=512,lc=(250, 152, 12)):
     if bird_view is None:
         bird_view = np.ones((outsize, outsize, 3), dtype=np.uint8) * 230
     for rect in rects:
@@ -294,14 +294,19 @@ def cam_bird_view(camtarget,camsource,bird_view=None,FOV=90,lc1=(100,100,100),lc
     #cam source
     # cord_p = np.zeros((1,4))
     # cord_p[0][3] = 1
+    cam_range = 50
     pol = outsize / world_size
     cam2_point = (int(cam1_point[0]-pol*(camtarget.location.y-camsource.location.y)),int(cam1_point[1]-pol*(camtarget.location.x-camsource.location.x)))
     yaw = -(camtarget.rotation.yaw-camsource.rotation.yaw)
+    nadd1 = cam2_point[0] + pol*cam_range * np.cos(np.radians(yaw-FOV/2))
+    nred1 = cam2_point[1] - pol*cam_range*np.sin(np.radians(yaw-FOV/2))
+    nadd2 = cam2_point[0]+pol*cam_range * np.cos(np.radians(yaw+FOV/2))
+    nred2 = cam2_point[1]-pol*cam_range*np.sin(np.radians(yaw+FOV/2))
     cv2.line(bird_view, cam2_point,
-        (int(cam2_point[0]+pol*outsize * np.cos(np.radians(yaw-FOV/2))), int(cam2_point[1]-pol*outsize*np.sin(np.radians(yaw-FOV/2)))), lc2, 1,
+        (int(nadd1), int(nred1)), lc2, 1,
         lineType=cv2.LINE_AA)
     cv2.line(bird_view, cam2_point,
-        (int(cam2_point[0]+pol*outsize * np.cos(np.radians(yaw+FOV/2))), int(cam2_point[1]-pol*outsize*np.sin(np.radians(yaw+FOV/2)))), lc2, 1,
+        (int(nadd2), int(nred2)), lc2, 1,
         lineType=cv2.LINE_AA)
     # cv2.line(bird_view, cam2_point,
     #     (cam2_point[0]-world_size/2, cam2_point[1]-world_size/2), lc2, 1,
