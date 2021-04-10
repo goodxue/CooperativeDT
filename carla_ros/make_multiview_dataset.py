@@ -455,6 +455,7 @@ class ClientSideBoundingBoxes(object):
 def main(weather_num):
     img_size = np.asarray([960,540],dtype=np.int)
     actor_list = []
+    rgb_list = []
     pygame.init()
 
     display = pygame.display.set_mode((VIEW_WIDTH, VIEW_HEIGHT), pygame.HWSURFACE | pygame.DOUBLEBUF)
@@ -522,26 +523,30 @@ def main(weather_num):
             point = Transform(Location(x=spawn_point.pop("x"), y=-spawn_point.pop("y"), z=spawn_point.pop("z")),
                  Rotation(pitch=-spawn_point.pop("pitch", 0.0), yaw=-spawn_point.pop("yaw", 0.0), roll=spawn_point.pop("roll", 0.0)))
             camera_bp = world.get_blueprint_library().find(sensor_type)
-            camera_bp.set_attribute('image_size_x', str(sensor_spec.pop("image_size_x")))
-            camera_bp.set_attribute('image_size_y', str(sensor_spec.pop("image_size_y")))
-            camera_bp.set_attribute('fov', str(sensor_spec.pop("fov")))
+            sizex = str(sensor_spec.pop("image_size_x"))
+            sizey = str(sensor_spec.pop("image_size_y"))
+            fovcfg = str(sensor_spec.pop("fov"))
+            camera_bp.set_attribute('image_size_x',sizex )
+            camera_bp.set_attribute('image_size_y', sizey)
+            camera_bp.set_attribute('fov', fovcfg)
             # camera_bp.set_attribute('sensor_id',str(sensor_id))
 
             semseg_bp = world.get_blueprint_library().find('sensor.camera.semantic_segmentation')
-            semseg_bp.set_attribute('image_size_x', str(sensor_spec.pop("image_size_x")))
-            semseg_bp.set_attribute('image_size_y', str(sensor_spec.pop("image_size_y")))
-            semseg_bp.set_attribute('fov', str(sensor_spec.pop("fov")))
+            semseg_bp.set_attribute('image_size_x', sizex)
+            semseg_bp.set_attribute('image_size_y', sizey)
+            semseg_bp.set_attribute('fov', fovcfg)
 
             camera_rgb = world.spawn_actor(camera_bp,point)
             camera_seg = world.spawn_actor(semseg_bp,point)
             camera_rgb.sensor_name = sensor_id
-            camera_seg.sensor_name = sensor_id + "_seg"
+            camera_seg.sensor_name = sensor_id + "_seg"  
             actor_list.append(camera_rgb)
             actor_list.append(camera_seg)
+            rgb_list .append(camera_rgb)
         except RuntimeError as e:
             raise RuntimeError("Setting up global sensors failed: {}".format(e))
 
-    out_path="/home/ubuntu/xwp/datasets/multi_view_dataset"
+    out_path="/home/ubuntu/xwp/datasets/multi_view_dataset/new"
     if not os.path.exists(out_path):
         os.makedirs(out_path)
 
@@ -549,7 +554,7 @@ def main(weather_num):
     with CarlaSyncMode(world, *actor_list, fps=20) as sync_mode:
         count=0
         k=0
-        while count<5000:
+        while count<50:
         # while count<100:
             count+=1
             if should_quit():
@@ -580,10 +585,10 @@ def main(weather_num):
             got_vehicles=[actor for actor in actual_actor if actor.type_id.find('vehicle')!=-1]
 
             vehicles_list = []
-            for camera_rgb in actor_list:
-                vehicles=[vehicle for vehicle in got_vehicles if vehicle.get_transform().location.distance(camera_rgb.get_transform().location)<50]
+            for camera_rgb in rgb_list:
+                vehicles=[vehicle for vehicle in got_vehicles if vehicle.get_transform().location.distance(camera_rgb.get_transform().location)<80]
                 vehicles_list.append(vehicles)
-                cam_path = out_path + "/{}".format(camera_rgb.id)
+                cam_path = out_path + "/{}".format(camera_rgb.sensor_name)
                 if not os.path.exists(cam_path):
                     os.makedirs(cam_path)
                     os.makedirs(cam_path+"/label_2")
@@ -593,8 +598,9 @@ def main(weather_num):
             # for vehicle in vehicles:
             #     debug.draw_box(carla.BoundingBox(vehicle.get_transform().location+vehicle.bounding_box.location, vehicle.bounding_box.extent), vehicle.get_transform().rotation, 0.05, carla.Color(255,0,0,0), life_time=0.05)
             # import pdb; pdb.set_trace()
+            all_vehicles_list = []
             
-            for i,(camera_rgb, vehicles,image,osemseg) in enumerate(zip(actor_list,vehicles_list,images,semseg_images)):
+            for i,(camera_rgb, vehicles,image,osemseg) in enumerate(zip(rgb_list,vehicles_list,images,semseg_images)):
                 v=[] #filtered_vehicles
 
                 # Convert semseg to cv.image
@@ -623,7 +629,7 @@ def main(weather_num):
                     camera_bbox_e = camera_bbox[0]
                     # if camera_bbox_e[:,0]<0 or camera_bbox_e[:,1]<0 or camera_bbox_e[:,2]<0:
                     #     continue
-                    if camera_bbox_e[:,2]<0.5:
+                    if camera_bbox_e[:,2]<0:
                         continue
                     
                     #bboxe = camera_bbox
@@ -656,17 +662,21 @@ def main(weather_num):
 
                     bbox_crop = tuple(max(0, b) for b in [xmin,ymin,xmax,ymax])
                     bbox_crop = (min(img_size[0], bbox_crop[0]),
-                                min(img_size[0], bbox_crop[1]),
+                                min(img_size[1], bbox_crop[1]),
                                 min(img_size[0], bbox_crop[2]),
                                 min(img_size[1], bbox_crop[3]))
                     # Use segment image to determine whether the vehicle is occluded.
                     # See https://carla.readthedocs.io/en/0.9.11/ref_sensors/#semantic-segmentation-camera
-                    if semseg[(xmin+xmax)/2,(ymin+ymax)/2,2] != 10:
+                    print('seg: ',semseg[int((ymin+ymax)/2),int((xmin+xmax)/2),0])
+                    print('x: ',int((ymin+ymax)/2),'y: ',int((xmin+xmax)/2))
+                    if semseg[int((ymin+ymax)/2),int((xmin+xmax)/2),0] != 10:
                         continue
 
                     car_2d_bbox.append(bbox_crop)
                     
                     v.append(car)
+                    if car not in all_vehicles_list:
+                        all_vehicles_list.append(car)
                     if ry>np.pi:
                         ry-=np.pi
                     if ry<-np.pi:
@@ -681,10 +691,28 @@ def main(weather_num):
                 #bounding_boxes = ClientSideBoundingBoxes.get_bounding_boxes(v, camera_rgb) 
                 ######################################################file
                 # pygame.image.save(display,'%s/image_1/%06d.png' % (out_path,k))       
-                image.save_to_disk('{}/{}/image_2/{:0>6d}.png'.format (out_path,camera_rgb.id,k))        
+                image.save_to_disk('{}/{}/image_2/{:0>6d}.png'.format (out_path,camera_rgb.sensor_name,k))        
+            
+            global_file_path = out_path + '/global_label_2'
+            if not os.path.exists(global_file_path):
+                os.makedirs(global_file_path)
+            global_vehicle_file = open("{}/{:0>6d}.txt".format(global_file_path,k), "w")
+            for vehicle in all_vehicles_list:
+                extent = vehicle.bounding_box.extent
+                car_type, truncated, occluded, alpha,xmin,ymin,xmax,ymax= 'Car', 0, 0,0,0,0,0,0
+                dh, dw,dl=extent.z*2,extent.y*2,extent.x*2
+                location  = vehicle.get_transform().location
+                ly,lz,lx = location.x,location.y,location.z
+                ry = vehicle.get_transform().rotation.yaw
+                
+                txt="{} {} {} {} {} {} {} {} {:.4f} {:.4f} {:.4f} {:.4f} {:.4f} {:.4f} {} {}\n".format(car_type, truncated, occluded, alpha, xmin, ymin, xmax, ymax, dh, dw,
+                            dl,ly, lz, lx,  ry,vehicle.id)
+                global_vehicle_file.write(txt)
+            global_vehicle_file.close()
 
-    for camera_rgb in actor_list:
-        calib_files=open("{}/{}/calib/{:0>6d}.txt".format(out_path,camera_rgb.id,0), "w")
+
+    for camera_rgb in rgb_list:
+        calib_files=open("{}/{}/calib/{:0>6d}.txt".format(out_path,camera_rgb.sensor_name,0), "w")
         K=camera_coordinate(camera_rgb)
 
         txt="P2: {} {} {} {} {} {} {} {} {}\n".format(  K[0][0],K[0][1],K[0][2],
