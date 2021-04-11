@@ -667,8 +667,8 @@ def main(weather_num):
                                 min(img_size[1], bbox_crop[3]))
                     # Use segment image to determine whether the vehicle is occluded.
                     # See https://carla.readthedocs.io/en/0.9.11/ref_sensors/#semantic-segmentation-camera
-                    print('seg: ',semseg[int((ymin+ymax)/2),int((xmin+xmax)/2),0])
-                    print('x: ',int((ymin+ymax)/2),'y: ',int((xmin+xmax)/2))
+                    # print('seg: ',semseg[int((ymin+ymax)/2),int((xmin+xmax)/2),0])
+                    # print('x: ',int((ymin+ymax)/2),'y: ',int((xmin+xmax)/2))
                     if semseg[int((ymin+ymax)/2),int((xmin+xmax)/2),0] != 10:
                         continue
 
