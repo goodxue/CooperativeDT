@@ -6,7 +6,7 @@ import pickle
 import json
 import numpy as np
 import cv2
-DATASET_PATH = '/home/ubuntu/xwp/datasets/multi_view_dataset/'
+DATASET_PATH = '/home/ubuntu/xwp/datasets/multi_view_dataset/new/'
 DEBUG = False
 # VAL_PATH = DATA_PATH + 'training/label_val/'
 import os
@@ -82,16 +82,21 @@ CALIB = np.array([[F, 0, W / 2, EXT[0]], [0, F, H / 2, EXT[1]],
 
 #一个cam共10000张图，选8000张训练，1000张验证，1000张测试
 #cam_sample共70000张图，每个10000中6000训练，2000验证，2000测试
-TRAIN_NUM = 400
-VAL_NUM = 50
-TEST_NUM = 50
+
+TRAIN_NUM = 800
+VAL_NUM = 100
+TEST_NUM = 100
+CAM_NUM = 34
+TOTAL_NUM = TRAIN_NUM + VAL_NUM + TEST_NUM
 TRAIN_SETS = ['cam_sample']
 TEST_SETS = ['cam7']
 IMG_H = 540
 IMG_W = 960
-TRAIN_SAMPLE = [range(1,TRAIN_NUM+1),range(501,TRAIN_NUM+501)]
-VAL_SAMPLE = [range(TRAIN_NUM+1,TRAIN_NUM+1+VAL_NUM),range(TRAIN_NUM+501,TRAIN_NUM+501+VAL_NUM)]
-TEST_SAMPLE = [range(TRAIN_NUM+1+VAL_NUM,501),range(TRAIN_NUM+501+VAL_NUM,1001)]
+#TRAIN_SAMPLE = [range(1,TRAIN_NUM+1),range(501,TRAIN_NUM+501)]
+TRAIN_SAMPLE = [range(i*TOTAL_NUM+1,i*TOTAL_NUM+TRAIN_NUM+1) for i in range(CAM_NUM)]
+#VAL_SAMPLE = [range(TRAIN_NUM+1,TRAIN_NUM+1+VAL_NUM),range(TRAIN_NUM+501,TRAIN_NUM+501+VAL_NUM)]
+VAL_SAMPLE = [range(i*TOTAL_NUM+TRAIN_NUM+1,i*TOTAL_NUM+TRAIN_NUM+1+VAL_NUM) for i in range(CAM_NUM)]
+TEST_SAMPLE = [range(i*TOTAL_NUM+TRAIN_NUM+1+VAL_NUM,(i+1)*TOTAL_NUM+1) for i in range(CAM_NUM)]
 
 cat_info = []
 for i, cat in enumerate(cats):

@@ -109,6 +109,9 @@ def box3d_matching(box3d1,box3d2,iou_threshold=0.01,fusion=None):
 
 	return ret + unmatched1 + unmatched2
 
+def box_mean_fusion(box3d1,box3d2):
+	return (box3d1+box3d2)/2
+
 def box3d_matching_index(box3d1,box3d2,iou_threshold=0.01,fusion=None):
 	'''
 	Input:
@@ -223,6 +226,8 @@ def convert_3dbox_to_8corner(bbox3d_input):
 	corners_3d[2,:] = corners_3d[2,:] + bbox3d[2]
 
 	return np.transpose(corners_3d)
+
+
 
 if __name__ == "__main__":
 	import time

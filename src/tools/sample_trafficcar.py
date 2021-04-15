@@ -3,24 +3,24 @@ import pickle
 import json
 import numpy as np
 import cv2
-DATASET_PATH = '/home/ubuntu/xwp/datasets/multi_view_dataset'
+DATASET_PATH = '/home/ubuntu/xwp/datasets/multi_view_dataset/new'
 DEBUG = False
 # VAL_PATH = DATA_PATH + 'training/label_val/'
 import os
 from tqdm.contrib import tzip
 import shutil
 
-TRAIN_NUM = 400
-VAL_NUM = 50
-TEST_NUM = 50
-CAM_SETS = ['346','347']
+TRAIN_NUM = 800
+VAL_NUM = 100
+TEST_NUM = 100
+CAM_SETS = ['cam{}'.format(str(i)) for i in range(32,35)]
 
 CAM_NUM = ''
 OUT_PATH = os.path.join(DATASET_PATH, 'cam_sample')
 OUT_IMG_PATH = os.path.join(OUT_PATH, 'image_2')
 OUT_ANN_PATH = os.path.join(OUT_PATH, 'label_2')
 OUT_CALIB_PATH = os.path.join(OUT_PATH, 'calib')
-count = 0
+count = 31000
 for path in [OUT_PATH,OUT_IMG_PATH,OUT_CALIB_PATH,OUT_ANN_PATH]:
     if not os.path.exists(path):
         os.mkdir(path)

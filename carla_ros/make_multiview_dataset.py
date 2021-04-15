@@ -463,7 +463,7 @@ def main(weather_num):
     clock = pygame.time.Clock()
 
     client = carla.Client('localhost', 2000,1)
-    client.set_timeout(10.0)
+    client.set_timeout(60.0)
     # cam_subset=1
 
     world = client.get_world()
@@ -478,7 +478,7 @@ def main(weather_num):
     
     
     # 加入其他车辆
-    Spawn_the_vehicles(world,client,car_num[0])
+    #Spawn_the_vehicles(world,client,car_num[0])
     ###########相机参数
     # cam_type='cam1'
     
@@ -501,16 +501,24 @@ def main(weather_num):
     
     global_sensors = []
     for actor in json_actors["objects"]:
-        actor_type = actor["type"].split('.')[0]
-        if actor_type == "sensor":
-            global_sensors.append(actor)
-        else:
-            continue
+        global_sensors.append(actor)
     
+    camera_bp = world.get_blueprint_library().find('sensor.camera.rgb')
+    sizex = str(960)
+    sizey = str(540)
+    fovcfg = str(90)
+    camera_bp.set_attribute('image_size_x',sizex )
+    camera_bp.set_attribute('image_size_y', sizey)
+    camera_bp.set_attribute('fov', fovcfg)
+    semseg_bp = world.get_blueprint_library().find('sensor.camera.semantic_segmentation')
+    semseg_bp.set_attribute('image_size_x', sizex)
+    semseg_bp.set_attribute('image_size_y', sizey)
+    semseg_bp.set_attribute('fov', fovcfg)
+
     for sensor_spec in global_sensors:
         try:
             sensor_names = []
-            sensor_type = str(sensor_spec.pop("type"))
+            sensor_type = str('sensor.camera.rgb')
             sensor_id = str(sensor_spec.pop("id"))
 
             sensor_name = sensor_type + "/" + sensor_id
@@ -518,31 +526,19 @@ def main(weather_num):
                 raise NameError
             sensor_names.append(sensor_name)
 
-
             spawn_point = sensor_spec.pop("spawn_point")
             point = Transform(Location(x=spawn_point.pop("x"), y=-spawn_point.pop("y"), z=spawn_point.pop("z")),
                  Rotation(pitch=-spawn_point.pop("pitch", 0.0), yaw=-spawn_point.pop("yaw", 0.0), roll=spawn_point.pop("roll", 0.0)))
-            camera_bp = world.get_blueprint_library().find(sensor_type)
-            sizex = str(sensor_spec.pop("image_size_x"))
-            sizey = str(sensor_spec.pop("image_size_y"))
-            fovcfg = str(sensor_spec.pop("fov"))
-            camera_bp.set_attribute('image_size_x',sizex )
-            camera_bp.set_attribute('image_size_y', sizey)
-            camera_bp.set_attribute('fov', fovcfg)
             # camera_bp.set_attribute('sensor_id',str(sensor_id))
 
-            semseg_bp = world.get_blueprint_library().find('sensor.camera.semantic_segmentation')
-            semseg_bp.set_attribute('image_size_x', sizex)
-            semseg_bp.set_attribute('image_size_y', sizey)
-            semseg_bp.set_attribute('fov', fovcfg)
-
             camera_rgb = world.spawn_actor(camera_bp,point)
-            camera_seg = world.spawn_actor(semseg_bp,point)
+            #camera_seg = world.spawn_actor(semseg_bp,point)
             camera_rgb.sensor_name = sensor_id
-            camera_seg.sensor_name = sensor_id + "_seg"  
+            #camera_seg.sensor_name = sensor_id + "_seg"  
             actor_list.append(camera_rgb)
-            actor_list.append(camera_seg)
+            #actor_list.append(camera_seg)
             rgb_list .append(camera_rgb)
+            print('spawned: ',camera_rgb.sensor_name)
         except RuntimeError as e:
             raise RuntimeError("Setting up global sensors failed: {}".format(e))
 
@@ -550,11 +546,12 @@ def main(weather_num):
     if not os.path.exists(out_path):
         os.makedirs(out_path)
 
+    Spawn_the_vehicles(world,client,car_num[0])
     ######################################################file
     with CarlaSyncMode(world, *actor_list, fps=20) as sync_mode:
         count=0
         k=0
-        while count<50:
+        while count<10000:
         # while count<100:
             count+=1
             if should_quit():
@@ -573,8 +570,9 @@ def main(weather_num):
             # image1=image_semseg.convert(ColorConverter.CityScapesPalette)
             # import pdb; pdb.set_trace()
             all_images = blobs[1:]
-            images = all_images[::2]
-            semseg_images = all_images[1::2]
+            images = all_images
+            #images = all_images[::2]
+            #semseg_images = all_images[1::2]
             snapshot = blobs[0]
             fps = round(1.0 / snapshot.timestamp.delta_seconds)
 
@@ -586,7 +584,7 @@ def main(weather_num):
 
             vehicles_list = []
             for camera_rgb in rgb_list:
-                vehicles=[vehicle for vehicle in got_vehicles if vehicle.get_transform().location.distance(camera_rgb.get_transform().location)<80]
+                vehicles=[vehicle for vehicle in got_vehicles if vehicle.get_transform().location.distance(camera_rgb.get_transform().location)<65]
                 vehicles_list.append(vehicles)
                 cam_path = out_path + "/{}".format(camera_rgb.sensor_name)
                 if not os.path.exists(cam_path):
@@ -600,14 +598,14 @@ def main(weather_num):
             # import pdb; pdb.set_trace()
             all_vehicles_list = []
             
-            for i,(camera_rgb, vehicles,image,osemseg) in enumerate(zip(rgb_list,vehicles_list,images,semseg_images)):
+            for i,(camera_rgb, vehicles,image) in enumerate(zip(rgb_list,vehicles_list,images)):
                 v=[] #filtered_vehicles
 
                 # Convert semseg to cv.image
-                semseg = np.frombuffer(osemseg.raw_data, dtype=np.dtype("uint8"))
-                semseg = np.reshape(semseg, (osemseg.height, osemseg.width, 4))
-                semseg = semseg[:, :, :3]
-                semseg = semseg[:, :, ::-1]
+                # semseg = np.frombuffer(osemseg.raw_data, dtype=np.dtype("uint8"))
+                # semseg = np.reshape(semseg, (osemseg.height, osemseg.width, 4))
+                # semseg = semseg[:, :, :3]
+                # semseg = semseg[:, :, ::-1]
                 # BGR
                 # Done
 
@@ -653,9 +651,10 @@ def main(weather_num):
                     lz=lz+dh
                     ry=(car.get_transform().rotation.yaw-camera_rgb.get_transform().rotation.yaw+90)*np.pi/180
                     check_box=False
+                    ofs = 3
                     for one_box in car_2d_bbox:
                         xmi,ymi,xma,yma=one_box
-                        if xmin>xmi and ymin>ymi and xmax<xma and ymax<yma:
+                        if xmin>xmi-ofs and ymin>ymi-ofs and xmax<xma+ofs and ymax<yma+ofs:
                             check_box=True
                     if check_box or np.sqrt(ly**2+lx**2)<3:
                         continue
@@ -669,8 +668,8 @@ def main(weather_num):
                     # See https://carla.readthedocs.io/en/0.9.11/ref_sensors/#semantic-segmentation-camera
                     # print('seg: ',semseg[int((ymin+ymax)/2),int((xmin+xmax)/2),0])
                     # print('x: ',int((ymin+ymax)/2),'y: ',int((xmin+xmax)/2))
-                    if semseg[int((ymin+ymax)/2),int((xmin+xmax)/2),0] != 10:
-                        continue
+                    # if semseg[int((ymin+ymax)/2),int((xmin+xmax)/2),0] != 10:
+                    #     continue
 
                     car_2d_bbox.append(bbox_crop)
                     
