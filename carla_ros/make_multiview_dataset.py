@@ -262,6 +262,8 @@ def Spawn_the_vehicles(world,client,car_num):
             logging.error(response.error)
         else:
             vehicles_list.append(response.actor_id)
+    
+    return vehicles_list
 
 def draw_image(surface, image, blend=False):
     array = np.frombuffer(image.raw_data, dtype=np.dtype("uint8"))
@@ -546,7 +548,7 @@ def main(weather_num):
     if not os.path.exists(out_path):
         os.makedirs(out_path)
 
-    Spawn_the_vehicles(world,client,car_num[0])
+    vehicles_actor = Spawn_the_vehicles(world,client,car_num[0])
     ######################################################file
     with CarlaSyncMode(world, *actor_list, fps=20) as sync_mode:
         count=0
@@ -724,6 +726,9 @@ def main(weather_num):
     print('destroying actors.')
     for actor in actor_list:
         actor.destroy()
+    
+    for vehicle in vehicles_actor:
+        vehicle.destory()
 
     pygame.quit()
 

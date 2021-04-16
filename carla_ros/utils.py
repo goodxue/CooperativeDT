@@ -17,9 +17,10 @@ class Transform(object):
     def __init__(self,rotation,location):
         self.rotation = rotation
         self.location = location
+    
 
 class CamVehicle(object):
-    def __init__(self,x,y,z,dh,dw,dl,ry):
+    def __init__(self,x,y,z,dh,dw,dl,ry,cid=-1):
         self.x = x
         self.y = y
         self.z = z
@@ -27,6 +28,7 @@ class CamVehicle(object):
         self.width = dw
         self.length = dl
         self.rotation_y = ry
+        self.id = cid
     
     @classmethod
     def by_location(self,location,dh,dw,dl,ry):
