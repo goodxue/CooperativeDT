@@ -109,8 +109,48 @@ def box3d_matching(box3d1,box3d2,iou_threshold=0.01,fusion=None):
 
 	return ret + unmatched1 + unmatched2
 
+def vehicle3d_matching(v1,v2,iou_threshold=0.01,fusion=None):
+	'''
+	Input:
+		box3d1: Nx8x3
+		box3d2: Nx8x3 (in the same camera cordinate)
+		iou_threshold: float
+	Output:
+		fusedboxes: ndarray((box3d1_index,box3d2_index)) : Mx1x2
+	'''
+	box3d1 = [v.compute_box_3d() for v in v1]
+	box3d2 = [v.compute_box_3d() for v in v2]
+	ret = []
+	iou_matrix = np.zeros((len(box3d1), len(box3d2)), dtype=np.float32)
+	for i, box1 in enumerate(box3d1):
+		for j, box2 in enumerate(box3d2):
+			iou_matrix[i,j] = iou3d(box1,box2)[0]
+	
+	row_ind, col_ind = linear_sum_assignment(-iou_matrix)      # hougarian algorithm
+	matched_indices = np.stack((row_ind, col_ind), axis=1)
+
+	unmatched1 = []
+	unmatched2 = []
+	for d, det in enumerate(v1):
+		if (d not in matched_indices[:, 0]): unmatched1.append(det)
+	
+	for d, det in enumerate(v2):
+		if (d not in matched_indices[:, 1]): unmatched2.append(det)
+
+	
+	for m in matched_indices:
+		if (iou_matrix[m[0], m[1]] < iou_threshold):
+			ret.append(v1[m[0]])
+			ret.append(v2[m[1]])
+		else: ret.append(v1[m[0]] if fusion == None else fusion(v1[m[0]],v2[m[1]]))
+
+	return ret + unmatched1 + unmatched2
+
 def box_mean_fusion(box3d1,box3d2):
 	return (box3d1+box3d2)/2
+
+def vehicle_mean_fusion(v1,v2):
+	return CamVehicle((v1.x+v2.x)/2,(v1.y+v2.y)/2,(v1.z+v2.z)/2,(v1.height+v2.height)/2,(v1.width+v2.width)/2,(v1.length+v2.length)/2,(v1.rotation_y+v2.rotation_y)/2,v1.id)
 
 def box3d_matching_index(box3d1,box3d2,iou_threshold=0.01,fusion=None):
 	'''

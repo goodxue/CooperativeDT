@@ -1,5 +1,17 @@
 import numpy as np
 import cv2
+import sys
+import glob
+import os
+try:
+    sys.path.append(glob.glob('../carla/dist/carla-*%d.%d-%s.egg' % (
+        sys.version_info.major,
+        sys.version_info.minor,
+        'win-amd64' if os.name == 'nt' else 'linux-x86_64'))[0])
+except IndexError:
+    pass
+
+import carla
 
 class Rotation(object):
     def __init__(self,yaw=0,roll=0,pitch=0):
@@ -33,6 +45,16 @@ class CamVehicle(object):
     @classmethod
     def by_location(self,location,dh,dw,dl,ry):
         return self(location.x,location.y,location.z,dh,dw,dl,ry)
+    
+    @classmethod
+    def by_box3d(self,box3d):
+        point1 = box3d[0,:]
+        point5 = box3d[4,:]
+        x = (point1[0]+point5[0])/2
+        h = point1[1]-point5[1] 
+        y = h+point5[1]
+        z = (point1[2] - point5[2])/2
+        return self((x,y,z,h,2*point1[0]))
 
     def compute_box_3d(self):
         # dim: 3
@@ -50,6 +72,23 @@ class CamVehicle(object):
         corners_3d = np.dot(R, corners) 
         corners_3d = corners_3d + np.array([self.x,self.y,self.z], dtype=np.float32).reshape(3, 1)
         return corners_3d.transpose(1, 0)
+
+def camera_coordinate(camera_bp):
+    #Build the intrinsics projection matrix:
+    # intrinsics = [[Fx,  0, image_w/2],
+    #      [ 0, Fy, image_h/2],
+    #      [ 0,  0,         1]]
+    image_w = int(camera_bp.attributes["image_size_x"])
+    image_h = int(camera_bp.attributes["image_size_y"])
+    fov = float(camera_bp.attributes["fov"])
+    focal = image_w / (2.0 * np.tan(fov * np.pi / 360.0))
+    # In this case Fx and Fy are the same since the pixel aspect ratio is 1
+    intrinsics = np.identity(3)
+    intrinsics[0, 0] = intrinsics[1, 1] = focal
+    intrinsics[0, 2] = image_w / 2.0
+    intrinsics[1, 2] = image_h / 2.0
+    # return intrinsics,extrinsics
+    return intrinsics
         
 
 class ClientSideBoundingBoxes(object):
@@ -176,7 +215,7 @@ class ClientSideBoundingBoxes(object):
         s_r = np.sin(np.radians(rotation.roll))
         c_p = np.cos(np.radians(rotation.pitch))
         s_p = np.sin(np.radians(rotation.pitch))
-        matrix = np.matrix(np.identity(4))
+        matrix = np.identity(4)
         matrix[0, 3] = location.x
         matrix[1, 3] = location.y
         matrix[2, 3] = location.z

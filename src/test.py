@@ -122,6 +122,7 @@ def test(opt):
 
 if __name__ == '__main__':
   opt = opts().parse()
+  opt.save_dir = '/home/ubuntu/xwp/datasets/multi_view_dataset/new/'
   if opt.not_prefetch_test:
     test(opt)
   else:

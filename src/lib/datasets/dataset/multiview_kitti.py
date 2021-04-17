@@ -86,6 +86,6 @@ class KITTI(data.Dataset):
   def run_eval(self, results, save_dir):
     self.save_results(results, save_dir)
     os.system('./tools/kitti_eval/evaluate_object_3d_offline ' + \
-              '/home/ubuntu/xwp/datasets/multi_view_dataset/{}/label_new '.format(self.cam_num) + \
+              '/home/ubuntu/xwp/datasets/multi_view_dataset/new/{}/label_new '.format(self.cam_num) + \
               '{}/results/'.format(save_dir))
     
