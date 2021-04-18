@@ -254,10 +254,10 @@ if __name__ == '__main__':
   IMG_W = 960
 
   #image = cv2.imread('/home/ubuntu/xwp/CenterNet/data/traffic_car/cam_sample/image_2/000053.png')
-  image = cv2.imread('/home/ubuntu/xwp/datasets/multi_view_dataset/new/cam9/image_2/000001.png')
+  image = cv2.imread('/home/ubuntu/xwp/datasets/multi_view_dataset/new/cam_sample/image_2/009002.png')
   calib = read_clib('./test_code/000000.txt')
   #anns = open('/home/ubuntu/xwp/CenterNet/data/traffic_car/cam_sample/label_2/000052.txt', 'r')
-  anns = open('/home/ubuntu/xwp/datasets/multi_view_dataset/new/cam9/label_2/000001.txt', 'r')
+  anns = open('/home/ubuntu/xwp/datasets/multi_view_dataset/new/cam10/label_2/000002.txt', 'r')
   ori_anns = []
   ret = {'images': [], 'annotations': [], "categories": []}
 

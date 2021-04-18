@@ -31,7 +31,8 @@ def get_vehicle_list(cam_gt,cam_trans):
         dim = [float(tmp[8]), float(tmp[9]), float(tmp[10])]
         location = [float(tmp[11]), float(tmp[12]), float(tmp[13])]
         rotation_y = float(tmp[14])
-        Id = int(tmp[15])
+        #Id = int(tmp[15])
+        score = float(tmp[15])
 
         cord_p = np.zeros((1,4))
         cord_p[0][0] = location[2]
@@ -45,32 +46,62 @@ def get_vehicle_list(cam_gt,cam_trans):
         ry_cam2world = (rotation_y - 90 + cam_trans.rotation.yaw ) * np.pi / 180
         #vehicles_loc_list_1.append(vehicle_matrix)
         #vehicles_list_1.append({'bbox':bbox,'dim':dim,'location':location,'rotation':rotation_y,'id':Id})
-        tv1 = CamVehicle(cam_to_world[1][0],-cam_to_world[2][0],cam_to_world[0][0],*dim,ry_cam2world,Id)
+        tv1 = CamVehicle(cam_to_world[1][0],-cam_to_world[2][0],cam_to_world[0][0],*dim,ry_cam2world,score=score)
         vehicles_list_v.append(tv1)
         #id_list.append(Id)
     
     return vehicles_list_v#,id_list
+
+def get_ids(file_name,id_list=None):
+    if id_list == None:
+        id_list = []
+    anns = open(file_name, 'r')
+    for ann_ind, txt in enumerate(anns):
+        tmp = txt[:-1].split(' ')
+        #cat_id = cat_ids[tmp[0]]
+        truncated = int(float(tmp[1]))
+        occluded = int(tmp[2])
+        alpha = float(tmp[3])
+        bbox = [float(tmp[4]), float(tmp[5]), float(tmp[6]), float(tmp[7])]
+        dim = [float(tmp[8]), float(tmp[9]), float(tmp[10])]
+        location = [float(tmp[11]), float(tmp[12]), float(tmp[13])]
+        rotation_y = float(tmp[14])
+        car_id = int(tmp[15])
+        if car_id not in id_list:
+            id_list.append(car_id)
+    return id_list
+    
+
+
     
 
 
 if __name__ == "__main__":
+    argparser = argparse.ArgumentParser(description=__doc__)
+    argparser.add_argument('-n',default='1',type=str,)
+    args = argparser.parse_args()
     FILTER_GLOBAL = True
     NUM_CAM = 1
-    cam_path = [
-        '/home/ubuntu/xwp/datasets/multi_view_dataset/new/cam1/label_test'
+    dataset_path = '/home/ubuntu/xwp/datasets/multi_view_dataset/new'
+    cam_set = ['cam{}'.format(args.n)]
+    camset_path = [ os.path.join(dataset_path,cam_name) for cam_name in cam_set
+        #'/home/ubuntu/xwp/datasets/multi_view_dataset/new/cam1/label_test'
         # '',
         # ''
     ]
+    cam_path = [os.path.join(path,'label_test') for path in camset_path]
     cam_transform = {
         'cam1': Transform(location=Location(x=-98, y=-130, z=4),rotation=Rotation(pitch=0, yaw=20, roll=0))
         # 'cam2': Transform(location=Location(x=1, y=-1, z=4),rotation=Rotation(pitch=-90, yaw=-180, roll=0)),
         # 'cam3': Transform(location=Location(x=1, y=-1, z=4),rotation=Rotation(pitch=-90, yaw=-180, roll=0))
     }
-    outdir_path = '/home/ubuntu/xwp/datasets/multi_view_dataset/new/fuse_cam1'
+    #outdir_path = '/home/ubuntu/xwp/datasets/multi_view_dataset/new/fuse_cam1'
+    outdir_path = '/home/ubuntu/xwp/datasets/multi_view_dataset/new/{}'.format(cam_set[0])
     if not os.path.exists(outdir_path):
         os.makedirs(outdir_path)
 
-    output_path = os.path.join(outdir_path,'label_trans')
+    #output_path = os.path.join(outdir_path,'label_fused')
+    output_path = os.path.join(outdir_path,'label_test_trans')
     if not os.path.exists(output_path):
         os.makedirs(output_path)
 
@@ -101,23 +132,32 @@ if __name__ == "__main__":
 
         for car in vehicles:
             f.write('{} 0.0 0 0 0 0 0 0'.format('Car'))
-            f.write(' {:.4f} {:.4f} {:.4f} {:.4f} {:.4f} {:.4f} {} {}'.format(car.height,car.width,car.length,car.z,car.x,-car.y,car.rotation_y,car.id))
+            f.write(' {:.4f} {:.4f} {:.4f} {:.4f} {:.4f} {:.4f} {} {}'.format(car.height,car.width,car.length,car.z,car.x,-car.y,car.rotation_y,car.score))
             f.write('\n')
         f.close()
     
     if FILTER_GLOBAL:
+
         #TODO 读取融合的相机的label_2，获取id，根据id将global中的标签过滤出来保存在融合文件夹下
         global_label_dir = '/home/ubuntu/xwp/datasets/multi_view_dataset/new/global_label_new'
-        ann_list = os.listdir(ann_dir)
+        ann_list = os.listdir(global_label_dir)
+        #global_label_filter_dir = os.path.join(outdir_path,'global_filtered')
         global_label_filter_dir = os.path.join(outdir_path,'global_filtered')
+        if not os.path.exists(global_label_filter_dir):
+            os.makedirs(global_label_filter_dir)
         for label_file in ann_list:
             ann_path = os.path.join(global_label_dir , '{}'.format(label_file))
-            out_path = output_dir + '{}'.format(label_file)
-            f = open(global_label_filter_dir, 'w')
+            id_list = []
+            for path in camset_path:
+                single_cam_label = os.path.join(path,'label_2',label_file)
+                id_list = get_ids(single_cam_label,id_list)
+
+            out_path = os.path.join(global_label_filter_dir , '{}'.format(label_file))
+            f = open(out_path, 'w')
             anns = open(ann_path, 'r')
             for ann_ind, txt in enumerate(anns):
                 tmp = txt[:-1].split(' ')
-                cat_id = cat_ids[tmp[0]]
+                #cat_id = cat_ids[tmp[0]]
                 truncated = int(float(tmp[1]))
                 occluded = int(tmp[2])
                 alpha = float(tmp[3])
@@ -132,7 +172,7 @@ if __name__ == "__main__":
 
                 if car_id in id_list:
                     txt="{} {} {} {} {} {} {} {} {:.4f} {:.4f} {:.4f} {:.4f} {:.4f} {:.4f} {} {}\n".format('Car', truncated, occluded, alpha, bbox[0], bbox[1], bbox[2], bbox[3], dim[0], dim[1],
-                                        dim[2],location[0], location[1], location[2],  rotation,car_id)
+                                        dim[2],location[0], location[1], -location[2],  rotation_y,car_id)
                     f.write(txt)
                 #f.write('\n')
             f.close()

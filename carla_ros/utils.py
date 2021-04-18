@@ -32,7 +32,7 @@ class Transform(object):
     
 
 class CamVehicle(object):
-    def __init__(self,x,y,z,dh,dw,dl,ry,cid=-1):
+    def __init__(self,x,y,z,dh,dw,dl,ry,cid=-1,score=0):
         self.x = x
         self.y = y
         self.z = z
@@ -41,6 +41,7 @@ class CamVehicle(object):
         self.length = dl
         self.rotation_y = ry
         self.id = cid
+        self.score = score
     
     @classmethod
     def by_location(self,location,dh,dw,dl,ry):

@@ -25,11 +25,10 @@ ann_list = os.listdir(OUT_ANN_PATH)
 ann_list.sort(key=lambda x:int(x[:-4]))
 
 for ann in ann_list:
+    num = int(ann[:-4])
+    pointer = num // 1000 - (0 if num % 1000 else 1) 
+    count = num % 1000 if num % 1000 else 1000
     cam_name = CAM_SETS[pointer]
-    count += 1
-    if count > 1000:
-        count = 1
-        pointer += 1
     ann_ori_path = os.path.join(OUT_ANN_PATH, ann)
     ann_dst_path = os.path.join(DATASET_PATH,cam_name,'label_2' ,'{:06d}.txt'.format(count))
     shutil.copyfile(ann_ori_path, ann_dst_path)
