@@ -43,10 +43,10 @@ def get_vehicle_list(cam_gt,cam_trans):
         rotation_y = rotation_y * 180 /np.pi
         cam_matrix = ClientSideBoundingBoxes.get_matrix(cam_trans)
         cam_to_world = np.dot(cam_matrix,np.transpose(cord_p))
-        ry_cam2world = (rotation_y - 90 + cam_trans.rotation.yaw ) * np.pi / 180
+        ry_cam2world = ry_filter_a(rotation_y - 90 + cam_trans.rotation.yaw ) * np.pi / 180
         #vehicles_loc_list_1.append(vehicle_matrix)
         #vehicles_list_1.append({'bbox':bbox,'dim':dim,'location':location,'rotation':rotation_y,'id':Id})
-        tv1 = CamVehicle(cam_to_world[1][0],-cam_to_world[2][0],cam_to_world[0][0],*dim,ry_cam2world,score=score)
+        tv1 = CamVehicle(cam_to_world[1][0],-cam_to_world[2][0],cam_to_world[0][0],*dim,ry_filter(ry_cam2world),score=score)
         vehicles_list_v.append(tv1)
         #id_list.append(Id)
     
@@ -80,7 +80,7 @@ if __name__ == "__main__":
     FILTER_GLOBAL = True
     NUM_CAM = 1
     dataset_path = '/home/ubuntu/xwp/datasets/multi_view_dataset/new'
-    cam_set = ['cam1']
+    cam_set = ['cam13']
     camset_path = [ os.path.join(dataset_path,cam_name) for cam_name in cam_set
         #'/home/ubuntu/xwp/datasets/multi_view_dataset/new/cam1/label_test'
         # '',
@@ -88,16 +88,16 @@ if __name__ == "__main__":
     ]
     cam_path = [os.path.join(path,'label_test') for path in camset_path]
     cam_transform = {
-        'cam1': Transform(location=Location(x=-98, y=-130, z=4),rotation=Rotation(pitch=0, yaw=20, roll=0))
+        'cam13': Transform(location=Location(x=-50, y=-125.5, z=4),rotation=Rotation(pitch=0, yaw=-145, roll=0))
         # 'cam2': Transform(location=Location(x=1, y=-1, z=4),rotation=Rotation(pitch=-90, yaw=-180, roll=0)),
         # 'cam3': Transform(location=Location(x=1, y=-1, z=4),rotation=Rotation(pitch=-90, yaw=-180, roll=0))
     }
     outdir_path = '/home/ubuntu/xwp/datasets/multi_view_dataset/new/fuse_cam1'
 
-    anns = open('/home/ubuntu/xwp/datasets/multi_view_dataset/new/cam1/label_2/000901.txt','r')
-    vehicles = get_vehicle_list(anns,cam_transform['cam1'])
+    anns = open('/home/ubuntu/xwp/datasets/multi_view_dataset/new/cam13/label_2/000901.txt','r')
+    vehicles = get_vehicle_list(anns,cam_transform['cam13'])
     #box_main_list = [v.compute_box_3d() for v in vehicles]
     for car in vehicles:
-        print(' {:.4f} {:.4f} {:.4f} {:.4f} {:.4f} {:.4f} {} {}'.format(car.height,car.width,car.length,car.z,car.x,-car.y,car.rotation_y,car.score))
+        print(' {:.4f} {:.4f} {:.4f} {:.4f} {:.4f} {:.4f} {} {}'.format(car.height,car.width,car.length,car.z,car.x,-car.y,ry_filter(car.rotation_y),car.score))
 
 

@@ -325,9 +325,9 @@ def project_3d_to_bird(pt):
     return pt.astype(np.int32)
 
 def ry_filter(ry):
-    if ry>np.pi:
+    if ry>np.pi/2:
         ry-=np.pi
-    if ry<-np.pi:
+    if ry<-np.pi/2:
         ry+=np.pi
     return ry
 
@@ -416,31 +416,37 @@ def cam_bird_view(camtarget,camsource,bird_view=None,FOV=90,lc1=(100,100,100),lc
 def cams_bird_view(centerpoint,camTransform_list,bird_view=None,FOV=90):
     #camtarget(Transform)
     #camsource(Transform)
-
+    outsize = 768
+    world_size = 256
     ncam = len(camTransform_list)
-    cam_range = 50
+    cam_range = 10
     pol = outsize / world_size
     if bird_view is None:
         bird_view = np.ones((outsize, outsize, 3), dtype=np.uint8) * 230
     # cam1_matrix = ClientSideBoundingBoxes.get_matrix(camtarget)
     # cam2_matrix = ClientSideBoundingBoxes.get_matrix(camtarget)
     #cam target
-    centerimg_point = (int(outsize/2), int(outsize * 2 / 3))
+    centerimg_point = (int(outsize/2), int(outsize / 2))
     
     for i,cam in enumerate(camTransform_list):
-        cam_point = (int(centerimg_point[0]-pol*(centerpoint.y - cam.location.y)),int(centerimg_point[1]-pol*(centerpoint.x - cam.location.x)))
-        yaw = -(cam.rotation.yaw - 90)
-        nadd1 = cam_point[0] + pol*cam_range * np.cos(np.radians(yaw-FOV/2))
-        nred1 = cam_point[1] - pol*cam_range*np.sin(np.radians(yaw-FOV/2))
-        nadd2 = cam_point[0]+pol*cam_range * np.cos(np.radians(yaw+FOV/2))
-        nred2 = cam_point[1]-pol*cam_range*np.sin(np.radians(yaw+FOV/2))
-        lc2 = (int(255/n*i),int(255-255/n*i),255)
-        cv2.line(bird_view, cam2_point,
-        (int(nadd1), int(nred1)), lc2, 1,
-        lineType=cv2.LINE_AA)
-        cv2.line(bird_view, cam2_point,
-            (int(nadd2), int(nred2)), lc2, 1,
-            lineType=cv2.LINE_AA)
+        cam_point = (int(centerimg_point[0]-pol*(centerpoint[1] - cam.location.y)),int(centerimg_point[1]-pol*(centerpoint[0] - cam.location.x)))
+        yaw = (cam.rotation.yaw - 90)
+        # nadd1 = cam_point[0] + pol*cam_range * np.cos(np.radians(yaw-FOV/2))
+        # nred1 = cam_point[1] - pol*cam_range*np.sin(np.radians(yaw-FOV/2))
+        # nadd2 = cam_point[0]+pol*cam_range * np.cos(np.radians(yaw+FOV/2))
+        # nred2 = cam_point[1]-pol*cam_range*np.sin(np.radians(yaw+FOV/2))
+        p1 = cam_point[0] + pol*cam_range * np.cos(np.radians(yaw))
+        p2 = nred1 = cam_point[1] - pol*cam_range*np.sin(np.radians(yaw))
+        lc2 = (int(255/ncam*i),int(255-255/ncam*i),255)
+        cv2.arrowedLine(bird_view, cam_point,
+        (int(p1), int(p2)), lc2, 1)
+        # cv2.line(bird_view, cam_point,
+        # (int(nadd1), int(nred1)), lc2, 1,
+        # lineType=cv2.LINE_AA)
+        # cv2.line(bird_view, cam_point,
+        #     (int(nadd2), int(nred2)), lc2, 1,
+        #     lineType=cv2.LINE_AA)
+
     #cam source
     # cord_p = np.zeros((1,4))
     # cord_p[0][3] = 1

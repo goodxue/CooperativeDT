@@ -5,6 +5,7 @@ import numpy as np, copy
 from numba import jit
 from scipy.spatial import ConvexHull
 from scipy.optimize import linear_sum_assignment
+from utils import CamVehicle
 
 #@jit          
 def poly_area(x,y):
@@ -150,7 +151,7 @@ def box_mean_fusion(box3d1,box3d2):
 	return (box3d1+box3d2)/2
 
 def vehicle_mean_fusion(v1,v2):
-	return CamVehicle((v1.x+v2.x)/2,(v1.y+v2.y)/2,(v1.z+v2.z)/2,(v1.height+v2.height)/2,(v1.width+v2.width)/2,(v1.length+v2.length)/2,(v1.rotation_y+v2.rotation_y)/2,v1.id)
+	return CamVehicle((v1.x+v2.x)/2,(v1.y+v2.y)/2,(v1.z+v2.z)/2,(v1.height+v2.height)/2,(v1.width+v2.width)/2,(v1.length+v2.length)/2,(v1.rotation_y+v2.rotation_y)/2,cid=v1.id,score=(v1.score+v2.score)/2)
 
 def box3d_matching_index(box3d1,box3d2,iou_threshold=0.01,fusion=None):
 	'''
