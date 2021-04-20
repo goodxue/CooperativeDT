@@ -211,11 +211,12 @@ if __name__ == '__main__':
     world.set_weather(getattr(carla.WeatherParameters, "ClearNoon"))
 
     # Spawn sensors
-    sensors_definition_file = '/home/ubuntu/xwp/CenterNet/carla_ros/dataset.json'
+    sensors_definition_file = '/home/ubuntu/xwp/CenterNet/carla_ros/dataset_test.json'
     if not os.path.exists(sensors_definition_file):
         raise RuntimeError(
             "Could not read sensor-definition from {}".format(sensors_definition_file))
 
+    CAM_SET=['cam3','cam20','cam34']
     with open(sensors_definition_file) as handle:
         json_actors = json.loads(handle.read())
     
@@ -283,7 +284,7 @@ if __name__ == '__main__':
     # Finished!
     vehicles_actor = Spawn_the_vehicles(world,client,transform_list)
 
-    out_path="/home/ubuntu/xwp/datasets/multi_view_dataset/crowd_test"
+    out_path="/home/ubuntu/xwp/datasets/multi_view_dataset/crowd_test2"
     if not os.path.exists(out_path):
         os.makedirs(out_path)
 
@@ -442,7 +443,7 @@ if __name__ == '__main__':
                 dh, dw,dl=extent.z*2,extent.y*2,extent.x*2
                 location  = vehicle.get_transform().location
                 ly,lz,lx = location.x,location.y,location.z
-                ry = vehicle.get_transform().rotation.yaw
+                ry = (vehicle.get_transform().rotation.yaw) * np.pi /180
                 
                 txt="{} {} {} {} {} {} {} {} {:.4f} {:.4f} {:.4f} {:.4f} {:.4f} {:.4f} {} {}\n".format(car_type, truncated, occluded, alpha, xmin, ymin, xmax, ymax, dh, dw,
                             dl,ly, lz, lx,  ry,vehicle.id)

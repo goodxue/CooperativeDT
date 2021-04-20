@@ -1,0 +1,73 @@
+{   
+    "objects": 
+    [
+        {
+            "id" : "cam1",
+            "spawn_point":{"x":-98,"y":130.02,"z":4,"roll":0.0,"pitch":0.0,"yaw":30}
+        },
+        {
+            "id" : "cam2",
+            "spawn_point":{"x":-64,"y":126.52,"z":4,"roll":0.0,"pitch":0.0,"yaw":140}
+        },
+        {
+            "id" : "cam3",
+            "spawn_point":{"x":-80,"y":160,"z":4,"roll":0.0,"pitch":0.0,"yaw":-20}
+        },
+        {
+            "id" : "cam4",
+            "spawn_point":{"x":-80,"y":160,"z":4,"roll":0.0,"pitch":0.0,"yaw":-30}
+        },
+        {
+            "id" : "cam5",
+            "spawn_point":{"x":-80,"y":160,"z":4,"roll":0.0,"pitch":0.0,"yaw":-40}
+        },
+        {
+            "id" : "cam6",
+            "spawn_point":{"x":-80,"y":160,"z":4,"roll":0.0,"pitch":0.0,"yaw":-50}
+        },
+        {
+            "id" : "cam7",
+            "spawn_point":{"x":-80,"y":160,"z":4,"roll":0.0,"pitch":0.0,"yaw":-60}
+        },
+        {
+            "id" : "cam8",
+            "spawn_point":{"x":-80,"y":160,"z":4,"roll":0.0,"pitch":0.0,"yaw":-70}
+        },
+        {
+            "id" : "cam9",
+            "spawn_point":{"x":-80,"y":160,"z":4,"roll":0.0,"pitch":0.0,"yaw":-80}
+        },
+        {
+            "id" : "cam10",
+            "spawn_point":{"x":-80,"y":160,"z":4,"roll":0.0,"pitch":0.0,"yaw":-90}
+        },
+        {
+            "id" : "cam11",
+            "spawn_point":{"x":-80,"y":160,"z":4,"roll":0.0,"pitch":0.0,"yaw":-100}
+        },
+        {
+            "id" : "cam12",
+            "spawn_point":{"x":-80,"y":160,"z":4,"roll":0.0,"pitch":0.0,"yaw":-110}
+        },
+        {
+            "id" : "cam13",
+            "spawn_point":{"x":-80,"y":160,"z":4,"roll":0.0,"pitch":0.0,"yaw":-120}
+        },
+        {
+            "id" : "cam14",
+            "spawn_point":{"x":-80,"y":160,"z":4,"roll":0.0,"pitch":0.0,"yaw":-130}
+        },
+        {
+            "id" : "cam15",
+            "spawn_point":{"x":-80,"y":160,"z":4,"roll":0.0,"pitch":0.0,"yaw":-140}
+        },
+        {
+            "id" : "cam16",
+            "spawn_point":{"x":-80,"y":160,"z":4,"roll":0.0,"pitch":0.0,"yaw":-150}
+        },
+        {
+            "id" : "cam17",
+            "spawn_point":{"x":-80,"y":160,"z":4,"roll":0.0,"pitch":0.0,"yaw":-160}
+        }
+    ]
+}

@@ -6,6 +6,7 @@ from numba import jit
 from scipy.spatial import ConvexHull
 from scipy.optimize import linear_sum_assignment
 from utils import CamVehicle
+import random
 
 #@jit          
 def poly_area(x,y):
@@ -106,7 +107,7 @@ def box3d_matching(box3d1,box3d2,iou_threshold=0.01,fusion=None):
 		if (iou_matrix[m[0], m[1]] < iou_threshold):
 			ret.append(box3d1[m[0]])
 			ret.append(box3d2[m[1]])
-		else: ret.append(box3d1[m[0]] if fusion == None else fusion(box3d1[m[0]],box3d2[m[1]]))
+		else: ret.append(random.choice([box3d1[m[0]],box3d2[m[1]]]) if fusion == None else fusion(box3d1[m[0]],box3d2[m[1]]))
 
 	return ret + unmatched1 + unmatched2
 
@@ -143,7 +144,7 @@ def vehicle3d_matching(v1,v2,iou_threshold=0.01,fusion=None):
 		if (iou_matrix[m[0], m[1]] < iou_threshold):
 			ret.append(v1[m[0]])
 			ret.append(v2[m[1]])
-		else: ret.append(v1[m[0]] if fusion == None else fusion(v1[m[0]],v2[m[1]]))
+		else: ret.append(random.choice([v1[m[0]],v2[m[1]]]) if fusion == None else fusion(v1[m[0]],v2[m[1]]))
 
 	return ret + unmatched1 + unmatched2
 

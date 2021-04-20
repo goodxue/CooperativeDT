@@ -11,7 +11,7 @@ try:
 except IndexError:
     pass
 
-import carla
+#import carla
 
 class Rotation(object):
     def __init__(self,yaw=0,roll=0,pitch=0):
@@ -185,6 +185,7 @@ class ClientSideBoundingBoxes(object):
         """
         Transforms coordinates of a vehicle bounding box to world.
         """
+        import carla
         bb_transform = carla.Transform(vehicle.bounding_box.location)
         bb_vehicle_matrix = ClientSideBoundingBoxes.get_matrix(bb_transform)
         vehicle_world_matrix = ClientSideBoundingBoxes.get_matrix(vehicle.get_transform())
@@ -217,6 +218,7 @@ class ClientSideBoundingBoxes(object):
         c_p = np.cos(np.radians(rotation.pitch))
         s_p = np.sin(np.radians(rotation.pitch))
         matrix = np.identity(4)
+        #matrix = np.matrix(np.identity(4))
         matrix[0, 3] = location.x
         matrix[1, 3] = location.y
         matrix[2, 3] = location.z

@@ -24,7 +24,7 @@ class KITTI(data.Dataset):
     self.cam_num = opt.cam
     super(KITTI, self).__init__()
     opt.data_dir = '/home/ubuntu/xwp/datasets'
-    self.data_dir = os.path.join(opt.data_dir, 'multi_view_dataset/new/{}'.format(opt.cam))
+    self.data_dir = os.path.join(opt.data_dir, 'multi_view_dataset/crowd_test2')
     self.img_dir = os.path.join(self.data_dir, 'image_2')
     if opt.trainval:
       split = 'train' if split == 'train' else 'test'
@@ -85,7 +85,10 @@ class KITTI(data.Dataset):
 
   def run_eval(self, results, save_dir):
     self.save_results(results, save_dir)
+    # os.system('./tools/kitti_eval/evaluate_object_3d_offline ' + \
+    #           '/home/ubuntu/xwp/datasets/multi_view_dataset/new/{}/label_new '.format(self.cam_num) + \
+    #           '{}/results/'.format(save_dir))
     os.system('./tools/kitti_eval/evaluate_object_3d_offline ' + \
-              '/home/ubuntu/xwp/datasets/multi_view_dataset/new/{}/label_new '.format(self.cam_num) + \
+              '/home/ubuntu/xwp/datasets/multi_view_dataset/crowd_test2/label_2' + \
               '{}/results/'.format(save_dir))
     
