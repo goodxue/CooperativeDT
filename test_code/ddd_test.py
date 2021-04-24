@@ -179,6 +179,35 @@ def compute_box_3d(dim, location, rotation_y):
   corners_3d = corners_3d + np.array(location, dtype=np.float32).reshape(3, 1)
   return corners_3d.transpose(1, 0)
 
+outsize = 384
+world_size = 128
+def add_bird_view(rects, bird_view = None,center_thresh=0.3, img_id='bird',outsize=384,lc=(250, 152, 12),lw=2):
+    if bird_view is None:
+        bird_view = np.ones((outsize, outsize, 3), dtype=np.uint8) * 230
+    #bird_view = np.ones((outsize, outsize, 3), dtype=np.uint8) * 230
+    #lc = (250, 152, 12)
+    for rect in rects:
+        rect = rect[:4, [0, 2]]
+        for k in range(4):
+            rect[k] = project_3d_to_bird(rect[k])
+            # cv2.circle(bird_view, (rect[k][0], rect[k][1]), 2, lc, -1)
+        cv2.polylines(
+            bird_view,[rect.reshape(-1, 1, 2).astype(np.int32)],
+            True,lc,lw,lineType=cv2.LINE_AA)
+            # for e in [[0, 1]]:
+            #     t = 4 if e == [0, 1] else 1
+            #     cv2.line(bird_view, (rect[e[0]][0], rect[e[0]][1]),
+            #             (rect[e[1]][0], rect[e[1]][1]), lc, t,
+            #             lineType=cv2.LINE_AA)
+    return bird_view
+def project_3d_to_bird(pt,center=None):
+  if center == None:
+    center = (world_size/2,world_size/3)
+  pt[0] += center[0]
+  pt[1] = world_size - pt[1] - center[1]
+  pt = pt * outsize / world_size
+  return pt.astype(np.int32)
+
 def project_to_image(pts_3d, P):
   # pts_3d: n x 3
   # P: 3 x 4
@@ -254,10 +283,10 @@ if __name__ == '__main__':
   IMG_W = 960
 
   #image = cv2.imread('/home/ubuntu/xwp/CenterNet/data/traffic_car/cam_sample/image_2/000053.png')
-  image = cv2.imread('/home/ubuntu/xwp/datasets/multi_view_dataset/crowd_test2/image_2/10001.png')
+  image = cv2.imread('/home/ubuntu/xwp/datasets/multi_view_dataset/new/cam_sample/image_2/033901.png')
   calib = read_clib('./test_code/000000.txt')
   #anns = open('/home/ubuntu/xwp/CenterNet/data/traffic_car/cam_sample/label_2/000052.txt', 'r')
-  anns = open('/home/ubuntu/xwp/datasets/multi_view_dataset/crowd_test2/results/010001.txt', 'r')
+  anns = open('/home/ubuntu/xwp/datasets/multi_view_dataset/new/cam34/label_test/000901.txt', 'r')
   ori_anns = []
   ret = {'images': [], 'annotations': [], "categories": []}
 
@@ -360,7 +389,7 @@ if __name__ == '__main__':
   
   print('len(ori_anns): ',len(ori_anns))
   print('len(vis_ann):',len(visable_anns))
-
+  box_list = []
   for ann in visable_anns:
     dim = ann['dim']
     location = ann['location']
@@ -373,10 +402,13 @@ if __name__ == '__main__':
     box_crop[3] = box_crop[1] + box_crop[3]
     box_crop = [int(x) for x  in box_crop]
     image = draw_box_3d(image,box_2d)
-    image = draw_box_2d(image, box_crop)
-    print(bbox_crop)
-    cv2.imshow('image',image)
-    cv2.waitKey()
+    box_list.append(box_3d)
+  bird_view = add_bird_view(box_list)
+    #image = draw_box_2d(image, box_crop)
+    #print(bbox_crop)
+  cv2.imshow('bird',bird_view)
+  cv2.imshow('image',image)
+  cv2.waitKey()
 
 #TUDO:
 #filter out the invisiable 3dbbox which in front of the camera with small distance(1m-2m), which covers more than a half image.

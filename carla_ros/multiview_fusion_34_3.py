@@ -52,7 +52,6 @@ def get_vehicle_list(cam_gt,cam_trans):
     
     return vehicles_list_v#,id_list
 
-
 def get_ids(file_name,id_list=None):
     if id_list == None:
         id_list = []
@@ -71,17 +70,33 @@ def get_ids(file_name,id_list=None):
         if car_id not in id_list:
             id_list.append(car_id)
     return id_list
-    
+
+def vehicle_world2sensor(vehicles,cam_trans,yaw):
+    ret = []
+    cam_trans = ClientSideBoundingBoxes.get_matrix(cam_trans)
+    for car in vehicles:
+        cord_p = np.zeros((1,4))
+        cord_p[0][0] = car.z
+        cord_p[0][1] = car.x
+        cord_p[0][2] = -car.y
+        cord_p[0][3] = 1
+        rotation_y = car.rotation_y * 180 / np.pi
+
+        p_in_cam1 = np.dot(np.linalg.inv(cam_trans), np.transpose(cord_p))
+        ry_world2cam1 = (rotation_y - yaw+90) * np.pi / 180
+        tv = CamVehicle(p_in_cam1[1][0],-p_in_cam1[2][0],p_in_cam1[0][0],car.height,car.width,car.length,ry_world2cam1)
+        ret.append(tv)
+    return ret
 
 
 if __name__ == "__main__":
     argparser = argparse.ArgumentParser(description=__doc__)
     argparser.add_argument('-n',default='1',type=str,)
     args = argparser.parse_args()
-    FILTER_GLOBAL = True
-    NUM_CAM = 4
+    FILTER_GLOBAL = False
+    NUM_CAM = 3
     dataset_path = '/home/ubuntu/xwp/datasets/multi_view_dataset/new'
-    cam_set = ['cam{}'.format(args.n),'cam10','cam18','cam26']
+    cam_set = ['cam3','cam20','cam34']
     print('processing: ',cam_set)
     camset_path = [ os.path.join(dataset_path,cam_name) for cam_name in cam_set
         #'/home/ubuntu/xwp/datasets/multi_view_dataset/new/cam1/label_test'
@@ -89,6 +104,7 @@ if __name__ == "__main__":
         # ''
     ]
     cam_path = [os.path.join(path,'label_test') for path in camset_path]
+    #cam_path = '/home/ubuntu/xwp/datasets/multi_view_dataset/new'
 
     cam_transform = {}
     sensors_definition_file = '/home/ubuntu/xwp/CenterNet/carla_ros/dataset.json'
@@ -114,7 +130,7 @@ if __name__ == "__main__":
 
 
     #outdir_path = '/home/ubuntu/xwp/datasets/multi_view_dataset/new/fuse_cam1'
-    outdir_path = '/home/ubuntu/xwp/datasets/multi_view_dataset/new/fuse_test/{}'.format('+'.join( cam_set))
+    outdir_path = '/home/ubuntu/xwp/datasets/multi_view_dataset/new/fuse_test'
     if not os.path.exists(outdir_path):
         os.makedirs(outdir_path)
 
@@ -123,14 +139,15 @@ if __name__ == "__main__":
     if not os.path.exists(output_path):
         os.makedirs(output_path)
 
-    if len(cam_path) != NUM_CAM:
-        raise RuntimeError('expect {} cam path but got {}'.format(NUM_CAM,len(cam_path)))
+    # if len(cam_path) != NUM_CAM:
+    #     raise RuntimeError('expect {} cam path but got {}'.format(NUM_CAM,len(cam_path)))
 
-    detect_main_list = os.listdir(cam_path[0])
+    detect_main_list = ['000901.txt']
     to_fuse_detectlist = []
-    for i in range(1,NUM_CAM):
-        to_fuse_detectlist.append(os.listdir(cam_path[i]))
+    for cam in cam_set[1:]:
+        to_fuse_detectlist.append('000901.txt')
     
+    #result_path = '/home/ubuntu/xwp/datasets/multi_view_dataset/new//results'
     for pred in detect_main_list:
         anns = open(os.path.join(cam_path[0],pred),'r')
         f = open(os.path.join(output_path,pred),'w')
@@ -138,27 +155,31 @@ if __name__ == "__main__":
         #box_main_list = [v.compute_box_3d() for v in vehicles]
 
         for i in range(1,NUM_CAM):
-            if pred not in to_fuse_detectlist[i-1]:
-                raise RuntimeError('{} not in {}'.format(pred,cam_path[i]))
+            # if pred not in to_fuse_detectlist[i-1]:
+            #     raise RuntimeError('{} not in {}'.format(pred,cam_path[i]))
             anns2 = open(os.path.join(cam_path[i],pred))
             vehicles2 = get_vehicle_list(anns2,cam_transform[cam_set[i]])
             #box_to_fuse_list = [v.compute_box_3d() for v in vehicels2]
-            #vehicles = bu.vehicle3d_matching(vehicles,vehicles2,iou_threshold=0.1,fusion=bu.vehicle_mean_fusion)
-            vehicles = bu.vehicle3d_matching(vehicles,vehicles2,iou_threshold=0.1)
+            vehicles = bu.vehicle3d_matching(vehicles,vehicles2,iou_threshold=0.05,fusion=bu.vehicle_mean_fusion)
+            #vehicles = bu.vehicle3d_matching(vehicles,vehicles2,iou_threshold=0.1)
             # for cid in id_list2:
             #     if cid not in id_list:
             #         id_list.append(cid)
-
-        for car in vehicles:
-            f.write('{} 0.0 0 0 0 0 0 0'.format('Car'))
-            f.write(' {:.4f} {:.4f} {:.4f} {:.4f} {:.4f} {:.4f} {} {}'.format(car.height,car.width,car.length,car.z,car.x,-car.y,car.rotation_y,car.score))
-            f.write('\n')
-        f.close()
+        box3d_list = [car.compute_box_3d() for car in vehicle_world2sensor(vehicles,cam_transform[cam_set[0]],-20)]
+        print(box3d_list)
+        bird_view = add_bird_view(box3d_list)
+        cv2.imshow('bird',bird_view)
+        cv2.waitKey()
+        # for car in vehicles:
+        #     f.write('{} 0.0 0 0 0 0 0 0'.format('Car'))
+        #     f.write(' {:.4f} {:.4f} {:.4f} {:.4f} {:.4f} {:.4f} {} {}'.format(car.height,car.width,car.length,car.z,car.x,-car.y,car.rotation_y,car.score))
+        #     f.write('\n')
+        # f.close()
     
     if FILTER_GLOBAL:
 
         #TODO 读取融合的相机的label_2，获取id，根据id将global中的标签过滤出来保存在融合文件夹下
-        global_label_dir = '/home/ubuntu/xwp/datasets/multi_view_dataset/new/global_label_new'
+        global_label_dir = '/home/ubuntu/xwp/datasets/multi_view_dataset/crowd_test2/global_label_2'
         ann_list = os.listdir(global_label_dir)
         #global_label_filter_dir = os.path.join(outdir_path,'global_filtered')
         global_label_filter_dir = os.path.join(outdir_path,'global_filtered')
@@ -167,8 +188,8 @@ if __name__ == "__main__":
         for label_file in ann_list:
             ann_path = os.path.join(global_label_dir , '{}'.format(label_file))
             id_list = []
-            for path in camset_path:
-                single_cam_label = os.path.join(path,'label_2',label_file)
+            for cam in cam_set:
+                single_cam_label = os.path.join(cam_path,(cam[3:]+'0001')+'.txt')
                 id_list = get_ids(single_cam_label,id_list)
 
             out_path = os.path.join(global_label_filter_dir , '{}'.format(label_file))

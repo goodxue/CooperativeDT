@@ -41,11 +41,11 @@ if __name__ == "__main__":
     
     global_sensors = []
     for actor in json_actors["objects"]:
-        actor_type = actor["type"].split('.')[0]
-        if actor_type == "sensor":
-            global_sensors.append(actor)
-        else:
-            continue
+        #actor_type = actor["type"].split('.')[0]
+        # if actor_type == "sensor":
+        global_sensors.append(actor)
+        # else:
+        #     continue
     #print(global_sensors)
     cam_loc_dict = {}
     cam_point_dict = {}
@@ -53,13 +53,13 @@ if __name__ == "__main__":
     for sensor_spec in global_sensors:
         try:
             sensor_names = []
-            sensor_type = str(sensor_spec.pop("type"))
+            #sensor_type = str(sensor_spec.pop("type"))
             sensor_id = str(sensor_spec.pop("id"))
 
-            sensor_name = sensor_type + "/" + sensor_id
-            if sensor_name in sensor_names:
-                raise NameError
-            sensor_names.append(sensor_name)
+            #sensor_name = sensor_type + "/" + sensor_id
+            # if sensor_name in sensor_names:
+            #     raise NameError
+            # sensor_names.append(sensor_name)
             spawn_point = sensor_spec.pop("spawn_point")
             #print(spawn_point)
             point = Transform(location=Location(x=spawn_point.pop("x"), y=-spawn_point.pop("y"), z=spawn_point.pop("z")),
@@ -217,7 +217,6 @@ if __name__ == "__main__":
 
     fused = bu.box3d_matching(box3d1_list,box3d_list,iou_threshold=0.1)
     #print(fused.shape)
-
     bird_view = add_bird_view(box3d_list)
     bird_view = add_bird_view(box3d1_list,bird_view=bird_view,lc=(12, 250, 152),lw=1)
     bird_view = cam_bird_view(cam_point_dict['cam1'],cam_point_dict['cam2'],bird_view)

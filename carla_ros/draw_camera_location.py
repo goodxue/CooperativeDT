@@ -51,5 +51,7 @@ if __name__ == "__main__":
         cam_transform[sensor_id] = point
     
     img = cams_bird_view((-80,-140),list(cam_transform.values())[:])
+    #img = cv2.cvtColor(img,cv2.COLOR_BGR2BGRA)
     cv2.imshow('bird',img)
+    #cv2.imwrite('cam_png.png',img)
     cv2.waitKey()

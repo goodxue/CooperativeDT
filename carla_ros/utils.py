@@ -320,9 +320,11 @@ def add_bird_view(rects, bird_view = None,center_thresh=0.3, img_id='bird',outsi
             #             lineType=cv2.LINE_AA)
     return bird_view
 
-def project_3d_to_bird(pt):
-    pt[0] += world_size / 2
-    pt[1] = world_size - pt[1] - world_size / 3
+def project_3d_to_bird(pt,center=None):
+    if center == None:
+        center = (world_size/2,world_size/3)
+    pt[0] += center[0]
+    pt[1] = world_size - pt[1] - center[1]
     pt = pt * outsize / world_size
     return pt.astype(np.int32)
 
@@ -418,11 +420,12 @@ def cam_bird_view(camtarget,camsource,bird_view=None,FOV=90,lc1=(100,100,100),lc
 def cams_bird_view(centerpoint,camTransform_list,bird_view=None,FOV=90):
     #camtarget(Transform)
     #camsource(Transform)
-    outsize = 768
+    outsize = 512
     world_size = 256
     ncam = len(camTransform_list)
-    cam_range = 10
-    pol = outsize / world_size
+    cam_range = 12
+    pol = 5
+    #pol = outsize / world_size
     if bird_view is None:
         bird_view = np.ones((outsize, outsize, 3), dtype=np.uint8) * 230
     # cam1_matrix = ClientSideBoundingBoxes.get_matrix(camtarget)
