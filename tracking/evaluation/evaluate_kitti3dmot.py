@@ -156,7 +156,8 @@ class trackingEvaluation(object):
         if eval_2diou: 
             self.min_overlap   = 0.5  # minimum bounding box overlap for 3rd party metrics
         elif eval_3diou: 
-            self.min_overlap   = 0.25 # minimum bounding box overlap for 3rd party metrics
+            #self.min_overlap   = 0.25 # minimum bounding box overlap for 3rd party metrics
+            self.min_overlap   = 0.1
         else: assert False
         # print('min overlap creteria is %f' % self.min_overlap)
 
@@ -1105,7 +1106,7 @@ def evaluate(result_sha,mail,eval_3diou,eval_2diou):
         assert False, 'error'
     classes = []
     label_path = '/home/ubuntu/xwp/datasets/multi_view_dataset/new/fuse_test/cam1cam10/label_global_tracking'
-    for c in ("car"):
+    for c in ["car"]:
     # for c in ("car"):
         e = trackingEvaluation(gt_path=label_path,t_sha=result_sha, mail=mail,cls=c,eval_3diou=eval_3diou,eval_2diou=eval_2diou)
         # load tracker data and check provided classes

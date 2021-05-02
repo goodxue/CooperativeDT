@@ -124,7 +124,7 @@ def box3d_iou(corners1, corners2, criterion='union'):
     
     ymax = min(corners1[0,1], corners2[0,1])
     ymin = max(corners1[4,1], corners2[4,1])
-    inter_vol = inter_area * max(0.0, ymax-ymin)
+    inter_vol = inter_area * max(0.0, np.abs(ymax-ymin))
     vol1 = box3d_vol(corners1)
     vol2 = box3d_vol(corners2)
     if criterion.lower() == 'union':

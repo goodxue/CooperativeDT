@@ -46,7 +46,7 @@ for label_file in ann_list:
         #box_2d = project_to_image(box_3d, calib)
         #bbox = (np.min(box_2d[:,0]), np.min(box_2d[:,1]), np.max(box_2d[:,0]), np.max(box_2d[:,1]))
 
-        txt="{} {} {} {} {} {} {} {} {} {} {:.4f} {:.4f} {:.4f} {:.4f} {:.4f} {:.4f} {}\n".format(frame,car_id,'Car', 0, 0, 0,0, 0, 0, 0,0, dim[0], dim[1],
+        txt="{} {} {} {} {} {} {} {} {} {} {:.4f} {:.4f} {:.4f} {:.4f} {:.4f} {:.4f} {}\n".format(frame,car_id,'Car', 0, 0,0, 0, 0, 0,0, dim[0], dim[1],
                             dim[2],location[1], -location[2], location[0],  rotation_y)
         # txt="{},{},{},{},{},{},{},{:.4f},{:.4f},{:.4f},{:.4f},{:.4f},{:.4f},{},{} \n".format(frame,2,0,0,0,0,score,
         #                         dim[0],dim[1],dim[2],location[1],-location[2],location[0],rotation_y,0)
