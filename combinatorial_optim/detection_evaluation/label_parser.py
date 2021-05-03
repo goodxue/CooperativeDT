@@ -67,6 +67,9 @@ class LabelParser:
                 if pred:
                     if 'score' in idx_key:
                         score.append(label[idx_key['score']])
+                else: #label: load id
+                    if 'score' in idx_key:
+                        score.append(int(label[idx_key['score']]))
         final_array = np.hstack((
             np.array(classes).reshape(-1, 1),
             np.array(x).reshape(-1, 1),
@@ -78,6 +81,8 @@ class LabelParser:
             np.array(r).reshape(-1, 1)
         ))
         if pred:
+            final_array = np.hstack((final_array, np.array(score).reshape(-1, 1)))
+        else:
             final_array = np.hstack((final_array, np.array(score).reshape(-1, 1)))
         return final_array
 

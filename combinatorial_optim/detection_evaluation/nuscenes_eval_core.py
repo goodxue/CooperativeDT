@@ -4,7 +4,7 @@ import sys
 import time
 import numpy as np
 import matplotlib.pyplot as plt
-from label_parser import LabelParser
+from .label_parser import LabelParser
 
 class NuScenesEval:
     def __init__(self, pred_label_path, gt_label_path, label_format,
@@ -27,13 +27,13 @@ class NuScenesEval:
             class_dict['recall'] = []
             self.results_dict[single_class] = class_dict
         # Format
-        if pred_label_path[-1] is not "/":
-            pred_label_path += "/"
-        if gt_label_path[-1] is not "/":
-            gt_label_path += "/"
+        # if pred_label_path[-1] is not "/":
+        #     pred_label_path += "/"
+        # if gt_label_path[-1] is not "/":
+        #     gt_label_path += "/"
         # Run
-        self.time = time.time()
-        self.evaluate(pred_label_path, gt_label_path, label_format)
+        #self.time = time.time()
+        #self.evaluate(pred_label_path, gt_label_path, label_format)
 
     def evaluate(self, pred_path, gt_path, label_format):
         pred_file_list = glob.glob(pred_path + "*")
@@ -112,13 +112,13 @@ class NuScenesEval:
             class_dict['recall'][i+1] = t_pos / class_dict['total_N_pos']
 
         ## Plot
-        plt.figure()
-        plt.plot(class_dict['recall'], class_dict['precision'])
-        plt.xlabel('Recall')
-        plt.ylabel('Precision')
-        plt.title('Precision Recall curve for {} Class'.format(class_dict['class']))
-        plt.xlim([0, 1])
-        plt.ylim([0, 1.05])
+        # plt.figure()
+        # plt.plot(class_dict['recall'], class_dict['precision'])
+        # plt.xlabel('Recall')
+        # plt.ylabel('Precision')
+        # plt.title('Precision Recall curve for {} Class'.format(class_dict['class']))
+        # plt.xlim([0, 1])
+        # plt.ylim([0, 1.05])
         # plt.show()
 
     def compute_f1_score(self, precision, recall):
@@ -174,20 +174,21 @@ class NuScenesEval:
 
     def eval_pair(self, pred_label, gt_label):
         ## Check
-        assert pred_label.shape[1] == 9
+        assert pred_label.shape[1] == 8
         assert gt_label.shape[1] == 8
 
         ## Threshold score
-        pred_label = pred_label[pred_label[:, 8].astype(np.float) > self.score_threshold, :]
+        #pred_label = pred_label[pred_label[:, 8].astype(np.float) > self.score_threshold, :]
 
         for single_class in self.classes:
             # get all pred labels, order by score
-            class_pred_label = pred_label[pred_label[:, 0] == single_class, 1:]
-            score = class_pred_label[:, 7].astype(np.float)
-            class_pred_label = class_pred_label[(-score).argsort(), :].astype(np.float) # sort decreasing
-
+            #class_pred_label = pred_label[pred_label[:, 0] == single_class, 1:]
+            #score = class_pred_label[:, 7].astype(np.float)
+            #class_pred_label = class_pred_label[(-score).argsort(), :].astype(np.float) # sort decreasing
+            class_pred_label = pred_label.astype(np.float)
             # add gt label length to total_N_pos
-            class_gt_label = gt_label[gt_label[:, 0] == single_class, 1:].astype(np.float)
+            #class_gt_label = gt_label[gt_label[:, 0] == single_class, 1:].astype(np.float)
+            class_gt_label = gt_label[:,:-1].astype(np.float)
             self.results_dict[single_class]['total_N_pos'] += class_gt_label.shape[0]
 
             # match pairs
@@ -232,3 +233,54 @@ class NuScenesEval:
             false_positives[:, 1] = pred_label[:, 7]
             result_score = np.vstack((result_score, false_positives))
         return true_preds, corresponding_gt, result_score
+    
+    def my_evaluate(self, pred, gt):
+        num_examples = len(pred)
+        # print("Starting evaluation for {} file predictions".format(num_examples))
+        # print("--------------------------------------------")
+
+        ## Evaluate matches
+        #print("Evaluation examples")
+        #file_parsing = LabelParser(label_format)
+        for i, (pred_fn,gt_fn) in enumerate(zip(pred,gt)):
+            #print("\r", i+1, "/", num_examples, end="")
+            self.eval_pair(pred_fn, gt_fn)
+        # print("\nDone!")
+        # print("----------------------------------")
+        ## Calculate
+        for single_class in self.classes:
+            class_dict = self.results_dict[single_class]
+            # print("Calculating metrics for {} class".format(single_class))
+            # print("----------------------------------")
+            # print("Number of ground truth labels: ", class_dict['total_N_pos'])
+            # print("Number of detections:  ", class_dict['result'].shape[0])
+            # print("Number of true positives:  ", np.sum(class_dict['result'][:, 0] == 1))
+            # print("Number of false positives:  ", np.sum(class_dict['result'][:, 0] == 0))
+            if class_dict['total_N_pos'] == 0:
+                # print("No detections for this class!")
+                # print(" ")
+                continue
+            ## AP
+            self.compute_ap_curve(class_dict)
+            mean_ap = self.compute_mean_ap(class_dict['precision'], class_dict['recall'])
+            # print('Mean AP: %.3f ' % mean_ap)
+            # f1 = self.compute_f1_score(class_dict['precision'], class_dict['recall'])
+            # print('F1 Score: %.3f ' % f1)
+            # print(' ')
+            # ## Positive Thresholds
+            # # ATE 2D
+            # ate2d = self.compute_ate2d(class_dict['T_p'], class_dict['gt'])
+            # print('Average 2D Translation Error [m]:  %.4f ' % ate2d)
+            # # ATE 3D
+            # ate3d = self.compute_ate3d(class_dict['T_p'], class_dict['gt'])
+            # print('Average 3D Translation Error [m]:  %.4f ' % ate3d)
+            # # ASE
+            # ase = self.compute_ase(class_dict['T_p'], class_dict['gt'])
+            # print('Average Scale Error:  %.4f ' % ase)
+            # # AOE
+            # aoe = self.compute_aoe(class_dict['T_p'], class_dict['gt'])
+            # print('Average Orientation Error [rad]:  %.4f ' % aoe)
+            # print(" ")
+            return mean_ap
+        self.time = float(time.time() - self.time)
+        print("Total evaluation time: %.5f " % self.time)
