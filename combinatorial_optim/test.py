@@ -85,16 +85,18 @@ if __name__ == '__main__':
     max_i,max_j = 0,0
     for i in range(34):
         for j in range(i+1,34):
-            Eval = NuScenesEval('', '', args.format)
             fused_data = cu.matching_and_fusion(cam_test_list[i],cam_test_list[j]) #融合
-            fused_gt = cu.filt_gt_labels(cam_gt_list[i],cam_gt_list[j])
-            #评估
-            mAP_temp = Eval.my_evaluate(fused_data,fused_gt)
-            if mAP_temp > max_map:
-                max_map = mAP_temp
-                max_i,max_j = i,j
-                print('temp max mAP: {}..........   time: ##   i: {}   j: {}  '.format(max_map,i,j))
-            #print(mAP_temp)
+            for k in range(j+1,34):
+                Eval = NuScenesEval('', '', args.format)
+                fused_data = cu.matching_and_fusion(fused_data,cam_test_list[k]) #融合
+                fused_gt = cu.filt_gt_labels_tuple(cam_gt_list[i],cam_gt_list[j],cam_gt_list[k])
+                #评估
+                mAP_temp = Eval.my_evaluate(fused_data,fused_gt)
+                if mAP_temp > max_map:
+                    max_map = mAP_temp
+                    max_i,max_j = i,j
+                    print('temp max mAP: {}..........   time: ##   i: {}   j: {}  k:{} '.format(max_map,i,j,k))
+                #print(mAP_temp)
     
     print('finished!')
 

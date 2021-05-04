@@ -148,3 +148,18 @@ def filt_gt_labels(gt_list1,gt_list2):
         all_gt = np.vstack((gt1,gt2))
         ret.append(all_gt[np.unique(all_gt[:,7].astype(np.int),return_index=True)[1]])
     return ret
+
+def filt_gt_labels_tuple(*gt_list_tuple):
+    if len(gt_list_tuple) == 0:
+        raise RuntimeError("input should be more than 1!")
+    
+    ret = gt_list_tuple[0]
+    for gt_list in gt_list_tuple[1:]:
+        ret_temp = []
+        for ind,(gt1,gt2) in enumerate(zip(ret,gt_list)):
+            all_gt = np.vstack((gt1,gt2))
+            ret_temp.append(all_gt[np.unique(all_gt[:,7].astype(np.int),return_index=True)[1]]) #去重
+        ret = ret_temp
+    return ret
+
+
