@@ -7,6 +7,20 @@ import numpy as np
 from .base import SkoBase
 from sko.operators import mutation
 
+def get_new_constellation(x):
+    size_n = x.shape[0]
+    ret = []
+    for i in range(size_n):
+        tmp = np.random.randint(0,34)
+        while tmp in ret:
+            tmp = np.random.randint(0,34)
+        ret.append(tmp)
+    ret.sort()
+    if ret == x.tolist():
+        return get_new_constellation(x)
+    else:
+        return np.array(ret)
+
 
 class SimulatedAnnealingBase(SkoBase):
     """
@@ -60,6 +74,7 @@ class SimulatedAnnealingBase(SkoBase):
         u = np.random.uniform(-1, 1, size=self.n_dims)
         x_new = x + 20 * np.sign(u) * self.T * ((1 + 1.0 / self.T) ** np.abs(u) - 1.0)
         return x_new
+        
 
     def cool_down(self):
         self.T = self.T * 0.7
@@ -181,7 +196,7 @@ class SACauchy(SimulatedAnnealingBase):
 
 
 # SA_fast is the default
-SA = SAFast
+#SA = SAFast
 
 
 class SA_TSP(SimulatedAnnealingBase):
@@ -199,3 +214,54 @@ class SA_TSP(SimulatedAnnealingBase):
             x_new = mutation.transpose(x_new)
 
         return x_new
+
+class SA_CO(SimulatedAnnealingBase):
+    # def cool_down(self):
+    #     self.T = self.T_max / (1 + np.log(1 + self.iter_cycle))
+
+    def get_new_x(self, x):
+        x_new = x.copy()
+        new_x_strategy = np.random.randint(3)
+        if new_x_strategy == 0:
+            x_new = mutation.swap(x_new)
+        elif new_x_strategy == 1:
+            x_new = mutation.reverse(x_new)
+        elif new_x_strategy == 2:
+            x_new = mutation.transpose(x_new)
+
+        return x_new
+
+    def run(self):
+        x_current, y_current = self.best_x, self.best_y
+        stay_counter = 0
+        while True:
+            for i in range(self.L):
+                x_new = get_new_constellation(x_current)
+                y_new = self.func(x_new)
+
+                # Metropolis
+                df = y_new - y_current
+                if df < 0 or np.exp(-df / self.T) > np.random.rand():
+                    x_current, y_current = x_new, y_new
+                    if y_new < self.best_y:
+                        self.best_x, self.best_y = x_new, y_new
+
+            self.iter_cycle += 1
+            self.cool_down()
+            self.generation_best_Y.append(self.best_y)
+            self.generation_best_X.append(self.best_x)
+
+            # if best_y stay for max_stay_counter times, stop iteration
+            if self.isclose(self.best_y_history[-1], self.best_y_history[-2]):
+                stay_counter += 1
+            else:
+                stay_counter = 0
+
+            if self.T < self.T_min:
+                stop_code = 'Cooled to final temperature'
+                break
+            if stay_counter > self.max_stay_counter:
+                stop_code = 'Stay unchanged in the last {stay_counter} iterations'.format(stay_counter=stay_counter)
+                break
+
+        return self.best_x, self.best_y

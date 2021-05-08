@@ -75,14 +75,45 @@ if __name__ == '__main__':
     print("load time: ",load_time)
 
     #遍历融合
-    
-    filt_start_time = time.time()
-    ret = cu.filt_gt_labels(cam_gt_list[0],cam_gt_list[1])
-    filt_time = time.time() - filt_start_time
-    print("filt gt for 1 iter, time: ",filt_time)
+    from sko import SA
 
-    max_map = 0
-    max_i,max_j = 0,0
+    def func_co(x):
+        x.sort()
+        Eval = NuScenesEval('', '', args.format)
+        fused_data = cu.matching_and_fusion(cam_test_list[x[0]],cam_test_list[x[1]])
+        fused_gt = cu.filt_gt_labels_tuple(cam_gt_list[x[0]],cam_gt_list[x[1]])
+        mAP_temp = Eval.my_evaluate(fused_data,fused_gt)
+        return 1- mAP_temp
+
+    def fuse_constellation(x):
+        #根据x的维度进行融合
+        x.sort()
+        size_n = x.shape[0]
+        main_cam = x[0]
+        gt_list = []
+        gt_list.append(cam_gt_list[main_cam])
+        for i in x[1:]:
+            fused_data = cu.matching_and_fusion(cam_test_list[main_cam],cam_test_list[i]) #融合
+            gt_list.append(cam_gt_list[i])
+        fused_gt = cu.filt_gt_labels_tuple(*gt_list)
+        Eval = NuScenesEval('', '', args.format)
+        mAP_temp = Eval.my_evaluate(fused_data,fused_gt)
+        return 1- mAP_temp
+
+
+    filt_start_time = time.time()
+    x0 = SA.get_new_constellation(np.array([0,1,2]))
+    sa = SA.SA_CO(func=fuse_constellation, x0=x0, T_max=1, T_min=0.4, L=40, max_stay_counter=10)
+    best_x, best_y = sa.run()
+    print('best_x:', best_x, 'best_y', 1-best_y)
+    
+    # filt_start_time = time.time()
+    # ret = cu.filt_gt_labels(cam_gt_list[0],cam_gt_list[1])
+    # filt_time = time.time() - filt_start_time
+    # print("filt gt for 1 iter, time: ",filt_time)
+
+    # max_map = 0
+    # max_i,max_j = 0,0
     # for i in range(34):
     #     for j in range(i+1,34):
     #         fused_data = cu.matching_and_fusion(cam_test_list[i],cam_test_list[j]) #融合
@@ -97,19 +128,7 @@ if __name__ == '__main__':
     #                 max_i,max_j = i,j
     #                 print('temp max mAP: {}..........   time: ##   i: {}   j: {}  k:{} '.format(max_map,i,j,k))
     #             #print(mAP_temp)
-    filt_start_time = time.time()
-    for i in range(34):
-        for j in range(i+1,34):
-            fused_data = cu.matching_and_fusion(cam_test_list[i],cam_test_list[j]) #融合
-            Eval = NuScenesEval('', '', args.format)
-            fused_gt = cu.filt_gt_labels_tuple(cam_gt_list[i],cam_gt_list[j])
-            #评估
-            mAP_temp = Eval.my_evaluate(fused_data,fused_gt)
-            if mAP_temp > max_map:
-                max_map = mAP_temp
-                max_i,max_j = i,j
-                print('temp max mAP: {}..........   time: ##   i: {}   j: {}  '.format(max_map,i,j))
-            #print(mAP_temp)
+    
     filt_time = time.time() - filt_start_time
     print('finished!,used {} s'.format(filt_time))
 
