@@ -3,6 +3,8 @@ import os
 import sys
 import json
 import numpy as np
+#import fov_utils as fu
+from fov_utils import FOV, _polygon_contains_point
 
 class Rotation(object):
     def __init__(self,yaw=0,roll=0,pitch=0):
@@ -91,7 +93,7 @@ def load_test_data(root_dir,num):
 
 
 #不用管gt和pred的意思，就是用贪心算法将两个array中最近的距离关联
-def match_pairs(gt_label,pred_label,fusion_function=None,distance_threshold_sq=1):
+def match_pairs(gt_label,pred_label,fusion_function=None,distance_threshold_sq=1,*args):
     true_preds = np.empty((0, 8))
     unmatched1 = np.empty((0, 8))
     unmatched2 = np.empty((0, 8))
@@ -111,7 +113,10 @@ def match_pairs(gt_label,pred_label,fusion_function=None,distance_threshold_sq=1
                 if fusion_function == None:
                     true_preds = np.vstack((true_preds, pred_label[min_idx, :].reshape(-1, 1).T))
                 else:
-                    true_preds = fusion_function(pred_label[min_idx, :],gt_label[gt_idx])
+                    temp = ((single_gt_label+pred_label[min_idx,:])/2).reshape(-1, 1).T
+                    true_preds = np.vstack((true_preds, temp))
+                    #true_preds = fusion_function(pred_label[min_idx, :],gt_label[gt_idx],args)
+
                 #corresponding_gt = np.vstack((corresponding_gt, gt_label[gt_idx]))
                 # Store score for mAP
                 #result_score = np.vstack((result_score, np.array([[1, pred_label[min_idx, 7]]])))
@@ -136,7 +141,7 @@ def match_pairs(gt_label,pred_label,fusion_function=None,distance_threshold_sq=1
 def matching_and_fusion(pred1,pred2,fusion_fuction=None):
     ret = []
     for ind,(frame_det1,frame_det2) in enumerate(zip(pred1,pred2)):
-        matched, unmatched1, unmatched2 = match_pairs(frame_det1.astype(np.float), frame_det2.astype(np.float))
+        matched, unmatched1, unmatched2 = match_pairs(frame_det1.astype(np.float), frame_det2.astype(np.float),fusion_fuction)
         ret.append(np.vstack((matched,unmatched1,unmatched2)))
     return ret
 
@@ -162,4 +167,23 @@ def filt_gt_labels_tuple(*gt_list_tuple):
         ret = ret_temp
     return ret
 
-
+def fov_match_and_fusion(pred1,pred2,point1,point2,trust_first=True,fusion_fuction=None):
+    ret = []
+    fov = FOV(point1).caculate_iou(FOV(point2))
+    for ind,(frame_det1,frame_det2) in enumerate(zip(pred1,pred2)):
+        trust_frame = frame_det1 if trust_first else frame_det2
+        matched, unmatched1, unmatched2 = match_pairs(frame_det1.astype(np.float), frame_det2.astype(np.float))
+        unmatched = np.vstack((unmatched1,unmatched2))
+        delete_index = []
+        #print(ind,':',len(unmatched))
+        for ind_un,car_point in enumerate(unmatched):
+            if _polygon_contains_point(fov,(car_point[0],car_point[1])):
+                if car_point.tolist() in trust_frame.tolist():
+                    continue
+                else:
+                    delete_index.append(ind_un)
+        tmp = np.delete(unmatched,obj=delete_index,axis=0)
+        ret.append(np.vstack((matched,tmp)))
+        #ret.append(unmatched)
+        #print(len(tmp))
+    return ret

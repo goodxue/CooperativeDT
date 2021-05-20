@@ -102,7 +102,7 @@ if __name__ == '__main__':
 
 
     filt_start_time = time.time()
-    x0 = SA.get_new_constellation(np.array([0,1,2]))
+    x0 = SA.get_new_constellation(np.array([0,1]))
     sa = SA.SA_CO(func=fuse_constellation, x0=x0, T_max=1, T_min=0.4, L=40, max_stay_counter=10)
     best_x, best_y = sa.run()
     print('best_x:', best_x, 'best_y', 1-best_y)

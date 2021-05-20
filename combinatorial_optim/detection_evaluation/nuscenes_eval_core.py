@@ -8,7 +8,7 @@ from .label_parser import LabelParser
 
 class NuScenesEval:
     def __init__(self, pred_label_path, gt_label_path, label_format,
-                 distance_threshold=2, classes=['Car'], score_threshold=0.0):
+                 distance_threshold=2, classes=['Car'], score_threshold=0):
 
         # Initialize
         self.distance_threshold_sq = distance_threshold**2
@@ -138,6 +138,9 @@ class NuScenesEval:
         mean_ap = np.sum(precision[1:]*recall_diff + recall_diff*precision_diff/2)
         # We need to divide by (1-recall_threshold) to make the max possible mAP = 1. In practice threshold by the first
         # considered recall value (threshold = 0.1 -> first considered value may be = 0.1123)
+        if recall.shape[0] == 0:
+            print(0)
+            return 0
         mean_ap = mean_ap/(1-recall[0])
         return mean_ap
 
@@ -178,7 +181,7 @@ class NuScenesEval:
         assert gt_label.shape[1] == 8
 
         ## Threshold score
-        #pred_label = pred_label[pred_label[:, 8].astype(np.float) > self.score_threshold, :]
+        pred_label = pred_label[pred_label[:, 7].astype(np.float) > self.score_threshold, :]
 
         for single_class in self.classes:
             # get all pred labels, order by score

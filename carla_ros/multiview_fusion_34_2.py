@@ -98,6 +98,8 @@ if __name__ == "__main__":
     with open(sensors_definition_file) as handle:
         json_actors = json.loads(handle.read())
     global_sensors = []
+    metric_map = []
+    metric_ate = []
     for actor in json_actors["objects"]:
         global_sensors.append(actor)
     for sensor_spec in global_sensors:
@@ -106,6 +108,8 @@ if __name__ == "__main__":
         point = Transform(location=Location(x=spawn_point.pop("x"), y=-spawn_point.pop("y"), z=spawn_point.pop("z")),
                 rotation=Rotation(pitch=-spawn_point.pop("pitch", 0.0), yaw=-spawn_point.pop("yaw", 0.0), roll=spawn_point.pop("roll", 0.0)))
         cam_transform[sensor_id] = point
+        metric_map.append(float(sensor_spec.pop("mAP")))
+        metric_ate.append(float(sensor_spec.pop("ATE")))
     # cam_transform = {
     #     'cam1': Transform(location=Location(x=-98, y=-130, z=4),rotation=Rotation(pitch=0, yaw=20, roll=0))
     #     # 'cam2': Transform(location=Location(x=1, y=-1, z=4),rotation=Rotation(pitch=-90, yaw=-180, roll=0)),

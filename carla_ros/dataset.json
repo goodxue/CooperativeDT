@@ -3,140 +3,208 @@
     [
         {
             "id" : "cam1",
-            "spawn_point":{"x":-98,"y":130,"z":4,"roll":0.0,"pitch":0.0,"yaw":-20}
+            "spawn_point":{"x":-98,"y":130,"z":4,"roll":0.0,"pitch":0.0,"yaw":-20},
+            "mAP":0.667,
+            "ATE":0.5313
         },
         {
             "id" : "cam2",
-            "spawn_point":{"x":-98,"y":130.01,"z":4,"roll":0.0,"pitch":0.0,"yaw":5}
+            "spawn_point":{"x":-98,"y":130.01,"z":4,"roll":0.0,"pitch":0.0,"yaw":5},
+            "mAP":0.726,
+            "ATE":0.5317
         },
         {
             "id" : "cam3",
-            "spawn_point":{"x":-98,"y":130.02,"z":4,"roll":0.0,"pitch":0.0,"yaw":30}
+            "spawn_point":{"x":-98,"y":130.02,"z":4,"roll":0.0,"pitch":0.0,"yaw":30},
+            "mAP":0.528,
+            "ATE":0.6429
         },
         {
             "id" : "cam4",
-            "spawn_point":{"x":-98,"y":130.03,"z":4,"roll":0.0,"pitch":0.0,"yaw":55}
+            "spawn_point":{"x":-98,"y":130.03,"z":4,"roll":0.0,"pitch":0.0,"yaw":55},
+            "mAP":0.569,
+            "ATE":0.7406
         },
         
         {
             "id" : "cam5",
-            "spawn_point":{"x":-95,"y":125,"z":4,"roll":0.0,"pitch":0.0,"yaw":-30}
+            "spawn_point":{"x":-95,"y":125,"z":4,"roll":0.0,"pitch":0.0,"yaw":-30},
+            "mAP":0.832,
+            "ATE":0.5083
         },
         {
             "id" : "cam6",
-            "spawn_point":{"x":-95,"y":124.99,"z":4,"roll":0.0,"pitch":0.0,"yaw":-5}
+            "spawn_point":{"x":-95,"y":124.99,"z":4,"roll":0.0,"pitch":0.0,"yaw":-5},
+            "mAP":0.697,
+            "ATE":0.6307
         },
         {
             "id" : "cam7",
-            "spawn_point":{"x":-95,"y":125.02,"z":4,"roll":0.0,"pitch":0.0,"yaw":20}
+            "spawn_point":{"x":-95,"y":125.02,"z":4,"roll":0.0,"pitch":0.0,"yaw":20},
+            "mAP":0.72,
+            "ATE":0.6367
         },
         {
             "id" : "cam8",
-            "spawn_point":{"x":-95,"y":125.01,"z":4,"roll":0.0,"pitch":0.0,"yaw":55}
+            "spawn_point":{"x":-95,"y":125.01,"z":4,"roll":0.0,"pitch":0.0,"yaw":55},
+            "mAP":0.478,
+            "ATE":0.6847
         },
         {
             "id" : "cam9",
-            "spawn_point":{"x":-95,"y":110,"z":4,"roll":0.0,"pitch":0.0,"yaw":-30}
+            "spawn_point":{"x":-95,"y":110,"z":4,"roll":0.0,"pitch":0.0,"yaw":-30},
+            "mAP":0.973,
+            "ATE":0.3643
         },
         {
             "id" : "cam10",
-            "spawn_point":{"x":-95,"y":110.01,"z":4,"roll":0.0,"pitch":0.0,"yaw":10}
+            "spawn_point":{"x":-95,"y":110.01,"z":4,"roll":0.0,"pitch":0.0,"yaw":10},
+            "mAP":0.859,
+            "ATE":0.4481
         },
         {
             "id" : "cam11",
-            "spawn_point":{"x":-95,"y":110.02,"z":4,"roll":0.0,"pitch":0.0,"yaw":45}
+            "spawn_point":{"x":-95,"y":110.02,"z":4,"roll":0.0,"pitch":0.0,"yaw":45},
+            "mAP":0.73,
+            "ATE":0.6184
         },
         {
             "id" : "cam12",
-            "spawn_point":{"x":-85,"y":105.99,"z":4,"roll":0.0,"pitch":0.0,"yaw":90}
+            "spawn_point":{"x":-85,"y":105.99,"z":4,"roll":0.0,"pitch":0.0,"yaw":90},
+            "mAP":0.572,
+            "ATE":0.7199
         },
         {
             "id" : "cam13",
-            "spawn_point":{"x":-50,"y":125.5,"z":4,"roll":0.0,"pitch":0.0,"yaw":145}
+            "spawn_point":{"x":-50,"y":125.5,"z":4,"roll":0.0,"pitch":0.0,"yaw":145},
+            "mAP":0.84,
+            "ATE":0.5397
         },
         {
             "id" : "cam14",
-            "spawn_point":{"x":-50,"y":125.51,"z":4,"roll":0.0,"pitch":0.0,"yaw":-170}
+            "spawn_point":{"x":-50,"y":125.51,"z":4,"roll":0.0,"pitch":0.0,"yaw":-170},
+            "mAP":0.818,
+            "ATE":0.4499
         },
         {
             "id" : "cam15",
-            "spawn_point":{"x":-45,"y":128.29,"z":4,"roll":0.0,"pitch":0.0,"yaw":145}
+            "spawn_point":{"x":-45,"y":128.29,"z":4,"roll":0.0,"pitch":0.0,"yaw":145},
+            "mAP":0.839,
+            "ATE":0.508
         },
         {
             "id" : "cam16",
-            "spawn_point":{"x":-45,"y":128.30,"z":4,"roll":0.0,"pitch":0.0,"yaw":-170}
+            "spawn_point":{"x":-45,"y":128.30,"z":4,"roll":0.0,"pitch":0.0,"yaw":-170},
+            "mAP":0.764,
+            "ATE":0.5205
         },
         {
             "id" : "cam17",
-            "spawn_point":{"x":-64,"y":126.51,"z":4,"roll":0.0,"pitch":0.0,"yaw":-120}
+            "spawn_point":{"x":-64,"y":126.51,"z":4,"roll":0.0,"pitch":0.0,"yaw":-120},
+            "mAP":0.916,
+            "ATE":0.5046
         },
         {
             "id" : "cam18",
-            "spawn_point":{"x":-64,"y":126.50,"z":4,"roll":0.0,"pitch":0.0,"yaw":-155}
+            "spawn_point":{"x":-64,"y":126.50,"z":4,"roll":0.0,"pitch":0.0,"yaw":-155},
+            "mAP":0.917,
+            "ATE":0.4711
         },
         {
             "id" : "cam19",
-            "spawn_point":{"x":-64,"y":126.49,"z":4,"roll":0.0,"pitch":0.0,"yaw":175}
+            "spawn_point":{"x":-64,"y":126.49,"z":4,"roll":0.0,"pitch":0.0,"yaw":175},
+            "mAP":0.984,
+            "ATE":0.6025
         },
         {
             "id" : "cam20",
-            "spawn_point":{"x":-64,"y":126.52,"z":4,"roll":0.0,"pitch":0.0,"yaw":140}
+            "spawn_point":{"x":-64,"y":126.52,"z":4,"roll":0.0,"pitch":0.0,"yaw":140},
+            "mAP":0.647,
+            "ATE":0.468
         },
         {
             "id" : "cam21",
-            "spawn_point":{"x":-64,"y":120,"z":4,"roll":0.0,"pitch":0.0,"yaw":-120}
+            "spawn_point":{"x":-64,"y":120,"z":4,"roll":0.0,"pitch":0.0,"yaw":-120},
+            "mAP":0.926,
+            "ATE":0.4876
         },
         {
             "id" : "cam22",
-            "spawn_point":{"x":-64,"y":120.01,"z":4,"roll":0.0,"pitch":0.0,"yaw":-155}
+            "spawn_point":{"x":-64,"y":120.01,"z":4,"roll":0.0,"pitch":0.0,"yaw":-155},
+            "mAP":0.917,
+            "ATE":0.5144
         },
         {
             "id" : "cam23",
-            "spawn_point":{"x":-64,"y":119.99,"z":4,"roll":0.0,"pitch":0.0,"yaw":175}
+            "spawn_point":{"x":-64,"y":119.99,"z":4,"roll":0.0,"pitch":0.0,"yaw":175},
+            "mAP":0.906,
+            "ATE":0.4478
         },
         {
             "id" : "cam24",
-            "spawn_point":{"x":-64,"y":120.02,"z":4,"roll":0.0,"pitch":0.0,"yaw":140}
+            "spawn_point":{"x":-64,"y":120.02,"z":4,"roll":0.0,"pitch":0.0,"yaw":140},
+            "mAP":0.705,
+            "ATE":0.5686
         },
         {
             "id" : "cam25",
-            "spawn_point":{"x":-64,"y":152,"z":4,"roll":0.0,"pitch":0.0,"yaw":-70}
+            "spawn_point":{"x":-64,"y":152,"z":4,"roll":0.0,"pitch":0.0,"yaw":-70},
+            "mAP":0.892,
+            "ATE":0.5461
         },
         {
             "id" : "cam26",
-            "spawn_point":{"x":-64,"y":152.01,"z":4,"roll":0.0,"pitch":0.0,"yaw":-110}
+            "spawn_point":{"x":-64,"y":152.01,"z":4,"roll":0.0,"pitch":0.0,"yaw":-110},
+            "mAP":0.888,
+            "ATE":0.5616
         },
         {
             "id" : "cam27",
-            "spawn_point":{"x":-95,"y":150.01,"z":4,"roll":0.0,"pitch":0.0,"yaw":-80}
+            "spawn_point":{"x":-95,"y":150.01,"z":4,"roll":0.0,"pitch":0.0,"yaw":-80},
+            "mAP":0.774,
+            "ATE":0.627
         },
         {
             "id" : "cam28",
-            "spawn_point":{"x":-95,"y":150.01,"z":4,"roll":0.0,"pitch":0.0,"yaw":-110}
+            "spawn_point":{"x":-95,"y":150.01,"z":4,"roll":0.0,"pitch":0.0,"yaw":-110},
+            "mAP":0.64,
+            "ATE":0.5644
         },
         {
             "id" : "cam29",
-            "spawn_point":{"x":-95,"y":165.01,"z":4,"roll":0.0,"pitch":0.0,"yaw":-45}
+            "spawn_point":{"x":-95,"y":165.01,"z":4,"roll":0.0,"pitch":0.0,"yaw":-45},
+            "mAP":0.637,
+            "ATE":0.6269
         },
         {
             "id" : "cam30",
-            "spawn_point":{"x":-95,"y":165,"z":4,"roll":0.0,"pitch":0.0,"yaw":-80}
+            "spawn_point":{"x":-95,"y":165,"z":4,"roll":0.0,"pitch":0.0,"yaw":-80},
+            "mAP":0.758,
+            "ATE":0.7774
         },
         {
             "id" : "cam31",
-            "spawn_point":{"x":-50,"y":145,"z":4,"roll":0.0,"pitch":0.0,"yaw":-135}
+            "spawn_point":{"x":-50,"y":145,"z":4,"roll":0.0,"pitch":0.0,"yaw":-135},
+            "mAP":0.774,
+            "ATE":0.4809
         },
         {
             "id" : "cam32",
-            "spawn_point":{"x":-50,"y":145.01,"z":4,"roll":0.0,"pitch":0.0,"yaw":-175}
+            "spawn_point":{"x":-50,"y":145.01,"z":4,"roll":0.0,"pitch":0.0,"yaw":-175},
+            "mAP":0.852,
+            "ATE":0.5118
         },
         {
             "id" : "cam33",
-            "spawn_point":{"x":-80,"y":160.01,"z":4,"roll":0.0,"pitch":0.0,"yaw":-110}
+            "spawn_point":{"x":-80,"y":160.01,"z":4,"roll":0.0,"pitch":0.0,"yaw":-110},
+            "mAP":0.597,
+            "ATE":0.5587
         },
         {
             "id" : "cam34",
-            "spawn_point":{"x":-80,"y":160,"z":4,"roll":0.0,"pitch":0.0,"yaw":-80}
+            "spawn_point":{"x":-80,"y":160,"z":4,"roll":0.0,"pitch":0.0,"yaw":-80},
+            "mAP":0.738,
+            "ATE":0.5608
         }
     ]
 }
