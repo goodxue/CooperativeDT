@@ -142,10 +142,10 @@ if __name__ == "__main__":
     # if len(cam_path) != NUM_CAM:
     #     raise RuntimeError('expect {} cam path but got {}'.format(NUM_CAM,len(cam_path)))
 
-    detect_main_list = ['000901.txt']
+    detect_main_list = ['000945.txt']
     to_fuse_detectlist = []
     for cam in cam_set[1:]:
-        to_fuse_detectlist.append('000901.txt')
+        to_fuse_detectlist.append('000945.txt')
     
     #result_path = '/home/ubuntu/xwp/datasets/multi_view_dataset/new//results'
     for pred in detect_main_list:
@@ -160,13 +160,14 @@ if __name__ == "__main__":
             anns2 = open(os.path.join(cam_path[i],pred))
             vehicles2 = get_vehicle_list(anns2,cam_transform[cam_set[i]])
             #box_to_fuse_list = [v.compute_box_3d() for v in vehicels2]
-            vehicles = bu.vehicle3d_matching(vehicles,vehicles2,iou_threshold=0.05,fusion=bu.vehicle_mean_fusion)
+            #vehicles = bu.vehicle3d_matching(vehicles,vehicles2,iou_threshold=0.001,fusion=bu.vehicle_mean_fusion)
+            vehicles = bu.vehicle3d_matching(vehicles,vehicles2,iou_threshold=0.1,fusion=None)
             #vehicles = bu.vehicle3d_matching(vehicles,vehicles2,iou_threshold=0.1)
             # for cid in id_list2:
             #     if cid not in id_list:
             #         id_list.append(cid)
         box3d_list = [car.compute_box_3d() for car in vehicle_world2sensor(vehicles,cam_transform[cam_set[0]],-20)]
-        print(box3d_list)
+        #print(box3d_list)
         bird_view = add_bird_view(box3d_list)
         cv2.imshow('bird',bird_view)
         cv2.waitKey()

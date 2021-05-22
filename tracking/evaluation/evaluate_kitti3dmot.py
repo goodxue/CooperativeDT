@@ -15,6 +15,7 @@ import mailpy
 from box_util import boxoverlap, box3doverlap
 
 num_sample_pts = 41.0
+cam_path = 'cam4+cam16+cam20+cam21'
 
 class tData:
     """
@@ -104,7 +105,7 @@ class trackingEvaluation(object):
         self.gt_path           = os.path.join(gt_path, "label")
         self.t_sha             = t_sha
         #self.t_path            = os.path.join("./results", t_sha, "data")
-        self.t_path         =   os.path.join('/home/ubuntu/xwp/datasets/multi_view_dataset/new/fuse_test/cam1cam10/tracking_results', "data")
+        self.t_path         =   os.path.join('/home/ubuntu/xwp/datasets/multi_view_dataset/new/fuse_test/'+cam_path+'/tracking_results', "data")
         
         # statistics and numbers for evaluation
         self.n_gt              = 0 # number of ground truth detections minus ignored false negatives and true positives
@@ -1081,7 +1082,7 @@ class stat:
 
     def plot(self):
         #save_dir = os.path.join("./results", self.t_sha)
-        save_dir = '/home/ubuntu/xwp/datasets/multi_view_dataset/new/fuse_test/cam1cam10/tracking_results'
+        save_dir = '/home/ubuntu/xwp/datasets/multi_view_dataset/new/fuse_test/'+cam_path+'/tracking_results'
 
         self.plot_over_recall(self.mota_list, 'MOTA - Recall Curve', 'MOTA', os.path.join(save_dir, 'MOTA_recall_curve_%s_%s.pdf' % (self.cls, self.suffix)))
         self.plot_over_recall(self.sMOTA_list, 'sMOTA - Recall Curve', 'sMOTA', os.path.join(save_dir, 'sMOTA_recall_curve_%s_%s.pdf' % (self.cls, self.suffix)))
@@ -1105,7 +1106,7 @@ def evaluate(result_sha,mail,eval_3diou,eval_2diou):
     else:
         assert False, 'error'
     classes = []
-    label_path = '/home/ubuntu/xwp/datasets/multi_view_dataset/new/fuse_test/cam1cam10/label_global_tracking'
+    label_path = '/home/ubuntu/xwp/datasets/multi_view_dataset/new/fuse_test/'+cam_path+'/label_global_tracking'
     for c in ["car"]:
     # for c in ("car"):
         e = trackingEvaluation(gt_path=label_path,t_sha=result_sha, mail=mail,cls=c,eval_3diou=eval_3diou,eval_2diou=eval_2diou)

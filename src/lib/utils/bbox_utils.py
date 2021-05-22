@@ -90,6 +90,7 @@ def box3d_matching(box3d1,box3d2,iou_threshold=0.01,fusion=None):
 	for i, box1 in enumerate(box3d1):
 		for j, box2 in enumerate(box3d2):
 			iou_matrix[i,j] = iou3d(box1,box2)[0]
+			#iou_matrix[i,j] = greedy_3d(box1,box2)
 	
 	row_ind, col_ind = linear_sum_assignment(-iou_matrix)      # hougarian algorithm
 	matched_indices = np.stack((row_ind, col_ind), axis=1)
@@ -228,6 +229,50 @@ def iou3d(corners1, corners2):
 	vol2 = box3d_vol(corners2)
 	iou = inter_vol / (vol1 + vol2 - inter_vol)
 	return iou, iou_2d
+
+def box3d_matching_greedy(box3d1,box3d2,iou_threshold=0.01,fusion=None):
+	'''
+	Input:
+		box3d1: Nx8x3
+		box3d2: Nx8x3 (in the same camera cordinate)
+		iou_threshold: float
+	Output:
+		fusedboxes: ndarray((box3d1_index,box3d2_index)) : Mx1x2
+	'''
+	ret = []
+	iou_matrix = np.zeros((len(box3d1), len(box3d2)), dtype=np.float32)
+	for i, box1 in enumerate(box3d1):
+		for j, box2 in enumerate(box3d2):
+			iou_matrix[i,j] = iou3d(box1,box2)[0]
+			#iou_matrix[i,j] = greedy_3d(box1,box2)
+	
+	row_ind, col_ind = linear_sum_assignment(-iou_matrix)      # hougarian algorithm
+	matched_indices = np.stack((row_ind, col_ind), axis=1)
+
+	unmatched1 = []
+	unmatched2 = []
+	for d, det in enumerate(box3d1):
+		if (d not in matched_indices[:, 0]): unmatched1.append(det)
+	
+	for d, det in enumerate(box3d2):
+		if (d not in matched_indices[:, 1]): unmatched2.append(det)
+
+	
+	for m in matched_indices:
+		if (iou_matrix[m[0], m[1]] < iou_threshold):
+			ret.append(box3d1[m[0]])
+			ret.append(box3d2[m[1]])
+		else: ret.append(random.choice([box3d1[m[0]],box3d2[m[1]]]) if fusion == None else fusion(box3d1[m[0]],box3d2[m[1]]))
+
+	return ret + unmatched1 + unmatched2
+
+def greedy_3d(corners1,corners2):
+	x1 = (corners1[0][0] + corners1[2][0])/2
+	x2 = (corners2[0][0] + corners2[2][0])/2
+	z1 = (corners1[0][2] + corners1[2][2])/2
+	z2 = (corners2[0][2] + corners2[2][2])/2
+	
+	return (x1 - x2)**2 + (z1 - z2)**2
 
 #@jit         
 def roty(t):

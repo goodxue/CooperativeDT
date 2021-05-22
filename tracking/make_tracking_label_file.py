@@ -5,7 +5,7 @@ import numpy as np
 cats = ['Car','DontCare']
 cat_ids = {'DontCare':0,'Car':2}
 
-DATASET_PATH = '/home/ubuntu/xwp/datasets/multi_view_dataset/new/fuse_test/cam1cam10/'
+DATASET_PATH = '/home/ubuntu/xwp/datasets/multi_view_dataset/new/fuse_test/cam4+cam16+cam20+cam21/'
 DEBUG = False
 # VAL_PATH = DATA_PATH + 'training/label_val/'
 import os

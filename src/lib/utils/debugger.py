@@ -78,7 +78,7 @@ class Debugger(object):
     num_classes = len(self.names)
     self.down_ratio=down_ratio
     # for bird view
-    self.world_size = 64
+    self.world_size = 128
     self.out_size = 384
 
   def add_img(self, img, img_id='default', revert_color=False):
@@ -330,7 +330,7 @@ class Debugger(object):
       self.imgs[img_id] = cv2.imread(image_or_path)
     for cat in dets:
       for i in range(len(dets[cat])):
-        cl = (self.colors[cat - 1, 0, 0]).tolist()
+        cl = (self.colors[cat+3, 0, 0]).tolist()
         if dets[cat][i, -1] > center_thresh:
           dim = dets[cat][i, 5:8]
           loc  = dets[cat][i, 8:11]
@@ -386,8 +386,9 @@ class Debugger(object):
   def add_bird_view(self, dets, center_thresh=0.3, img_id='bird'):
     bird_view = np.ones((self.out_size, self.out_size, 3), dtype=np.uint8) * 230
     for cat in dets:
-      cl = (self.colors[cat - 1, 0, 0]).tolist()
+      cl = (self.colors[cat +3, 0, 0]).tolist()
       lc = (250, 152, 12)
+      #lc = cl
       for i in range(len(dets[cat])):
         if dets[cat][i, -1] > center_thresh:
           dim = dets[cat][i, 5:8]

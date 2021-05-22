@@ -16,6 +16,7 @@ except ImportError:
 
 from utils import *
 import src.lib.utils.bbox_utils as bu
+#import combinatorial_optim.co_utils as co
 
 def get_vehicle_list(cam_gt,cam_trans):
     #vehicles_loc_list_1 = []
@@ -81,7 +82,7 @@ if __name__ == "__main__":
     FILTER_GLOBAL = True
     NUM_CAM = 4
     dataset_path = '/home/ubuntu/xwp/datasets/multi_view_dataset/new'
-    cam_set = ['cam{}'.format(args.n),'cam10','cam18','cam26']
+    cam_set = ['cam4','cam16','cam20','cam21']
     print('processing: ',cam_set)
     camset_path = [ os.path.join(dataset_path,cam_name) for cam_name in cam_set
         #'/home/ubuntu/xwp/datasets/multi_view_dataset/new/cam1/label_test'
