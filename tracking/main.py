@@ -15,11 +15,11 @@ if __name__ == '__main__':
 	# 	sys.exit(1)
 
 	#result_sha = sys.argv[1]
-	save_root = '/home/ubuntu/xwp/datasets/multi_view_dataset/new/fuse_test/cam4+cam16+cam20+cam21'
+	save_root = '/home/ubuntu/xwp/datasets/multi_view_dataset/new/fuse_test/cam9+cam21'
 	det_id2str = {1:'Pedestrian', 2:'Car', 3:'Cyclist'}
 
 	# seq_file_list, num_seq = load_list_from_folder(os.path.join('data/KITTI', result_sha))
-	seq_file_list, num_seq = load_list_from_folder('/home/ubuntu/xwp/datasets/multi_view_dataset/new/fuse_test/cam4+cam16+cam20+cam21/label_test_tracking')
+	seq_file_list, num_seq = load_list_from_folder('/home/ubuntu/xwp/datasets/multi_view_dataset/new/fuse_test/cam9+cam21/label_test_tracking')
 	total_time, total_frames = 0.0, 0
 	save_dir = os.path.join(save_root, 'tracking_results'); mkdir_if_missing(save_dir)
 	eval_dir = os.path.join(save_dir, 'data'); mkdir_if_missing(eval_dir)

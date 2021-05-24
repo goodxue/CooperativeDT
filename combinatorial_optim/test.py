@@ -105,21 +105,21 @@ if __name__ == '__main__':
     filt_start_time = time.time()
     max_map = 0
     max_i,max_j = 0,0
-    for i in range(34):
-        for j in range(i+1,34):
-            fused_data = cu.matching_and_fusion(cam_test_list[i],cam_test_list[j]) #融合
-            for k in range(j+1,34):
-                fused_data = cu.matching_and_fusion(fused_data,cam_test_list[k]) #融合
-                for z in range(k+1,34):
-                    Eval = NuScenesEval('', '', args.format)
-                    fused_data = cu.matching_and_fusion(fused_data,cam_test_list[z]) #融合
-                    fused_gt = cu.filt_gt_labels_tuple(cam_gt_list[i],cam_gt_list[j],cam_gt_list[k],cam_gt_list[z])
-                    #评估
-                    mAP_temp = Eval.my_evaluate(fused_data,fused_gt)
-                    if mAP_temp > max_map:
-                        max_map = mAP_temp
-                        max_i,max_j = i,j
-                        print('temp max mAP: {}..........   time: ##   i: {}   j: {}  k:{}  z:{}'.format(max_map,i,j,k,z))
+    # for i in range(34):
+    #     for j in range(i+1,34):
+    #         fused_data = cu.matching_and_fusion(cam_test_list[i],cam_test_list[j]) #融合
+    #         for k in range(j+1,34):
+    #             fused_data = cu.matching_and_fusion(fused_data,cam_test_list[k]) #融合
+    #             for z in range(k+1,34):
+    #                 Eval = NuScenesEval('', '', args.format)
+    #                 fused_data = cu.matching_and_fusion(fused_data,cam_test_list[z]) #融合
+    #                 fused_gt = cu.filt_gt_labels_tuple(cam_gt_list[i],cam_gt_list[j],cam_gt_list[k],cam_gt_list[z])
+    #                 #评估
+    #                 mAP_temp = Eval.my_evaluate(fused_data,fused_gt)
+    #                 if mAP_temp > max_map:
+    #                     max_map = mAP_temp
+    #                     max_i,max_j = i,j
+    #                     print('temp max mAP: {}..........   time: ##   i: {}   j: {}  k:{}  z:{}'.format(max_map,i,j,k,z))
                 #print(mAP_temp)
     # max_map = 0
     # max_i,max_j = 0,0
@@ -159,13 +159,17 @@ if __name__ == '__main__':
     #                     #     max_i,max_j = i,j
     #                     print('temp max mAP: {}..........   time: ##   i: {}   j: {}  k:{} '.format(mAP_temp,i,j,k))
                 #print(mAP_temp)
-    
+    def get_gt_size(gt):
+        ret = 0
+        for i in gt:
+            ret += len(i)
+        return ret
     
     # for i in range(34):
     #     for j in range(i+1,34):
     #         fused_data = cu.matching_and_fusion(cam_test_list[i],cam_test_list[j],fusion_fuction=1) #融合
     #         #fused_data = cu.fov_match_and_fusion(cam_test_list[i],cam_test_list[j],cam_transform[i],cam_transform[j],metric_map[i]>=metric_map[j]) #融合
-    #         Eval = NuScenesEval('', '', args.format,score_threshold=0.5)
+    #         Eval = NuScenesEval('', '', args.format,score_threshold=0)
     #         fused_gt = cu.filt_gt_labels_tuple(cam_gt_list[i],cam_gt_list[j])
     #         #评估
     #         mAP_temp = Eval.my_evaluate(fused_data,fused_gt,)
@@ -174,20 +178,21 @@ if __name__ == '__main__':
     #             max_i,max_j = i,j
     #             print('temp max mAP: {}..........   time: ##   i: {}   j: {}  '.format(max_map,i,j))
             #print(mAP_temp)
-    # for i in [10]:
-    #     for j in [18]:
-    #         for thre in [0,0.3,0.5]:
-    #             fused_data = cu.matching_and_fusion(cam_test_list[i],cam_test_list[j],fusion_fuction=None) #融合
-    #             #fused_data = cu.fov_match_and_fusion(cam_test_list[i],cam_test_list[j],cam_transform[i],cam_transform[j],metric_map[i]>=metric_map[j]) #融合
-    #             Eval = NuScenesEval('', '', args.format,score_threshold=thre)
-    #             fused_gt = cu.filt_gt_labels_tuple(cam_gt_list[i],cam_gt_list[j])
-    #             #评估
-    #             mAP_temp = Eval.my_evaluate(fused_data,fused_gt)
-    #             # if mAP_temp > max_map:
-    #             #     max_map = mAP_temp
-    #             #     max_i,max_j = i,j
-    #             print('temp max mAP: {}..........   time: ##   i: {}   j: {}  thre:{}'.format(mAP_temp,i,j,thre))
-    #             print(mAP_temp)
+    for i in [7]:
+        for j in [18]:
+            for thre in [0]:
+                fused_data = cu.matching_and_fusion(cam_test_list[i],cam_test_list[j],fusion_fuction=None) #融合
+                #fused_data = cu.fov_match_and_fusion(cam_test_list[i],cam_test_list[j],cam_transform[i],cam_transform[j],metric_map[i]>=metric_map[j]) #融合
+                Eval = NuScenesEval('', '', args.format,score_threshold=thre)
+                fused_gt = cu.filt_gt_labels_tuple(cam_gt_list[i],cam_gt_list[j])
+                #评估
+                mAP_temp = Eval.my_evaluate(fused_data,fused_gt)
+                # if mAP_temp > max_map:
+                #     max_map = mAP_temp
+                #     max_i,max_j = i,j
+                print('temp max mAP: {}..........   time: ##   i: {}   j: {}  thre:{}'.format(mAP_temp,i,j,thre))
+                print('gt size:',get_gt_size(fused_gt))
+                print(mAP_temp)
     filt_time = time.time() - filt_start_time
     print('finished!,used {} s'.format(filt_time))
 

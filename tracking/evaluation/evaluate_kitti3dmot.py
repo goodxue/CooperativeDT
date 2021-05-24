@@ -15,7 +15,7 @@ import mailpy
 from box_util import boxoverlap, box3doverlap
 
 num_sample_pts = 41.0
-cam_path = 'cam4+cam16+cam20+cam21'
+cam_path = 'cam9+cam21'
 
 class tData:
     """

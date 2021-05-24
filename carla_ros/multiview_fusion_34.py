@@ -80,9 +80,9 @@ if __name__ == "__main__":
     argparser.add_argument('-n',default='1',type=str,)
     args = argparser.parse_args()
     FILTER_GLOBAL = True
-    NUM_CAM = 4
+    NUM_CAM = 2
     dataset_path = '/home/ubuntu/xwp/datasets/multi_view_dataset/new'
-    cam_set = ['cam4','cam16','cam20','cam21']
+    cam_set = ['cam9','cam21']
     print('processing: ',cam_set)
     camset_path = [ os.path.join(dataset_path,cam_name) for cam_name in cam_set
         #'/home/ubuntu/xwp/datasets/multi_view_dataset/new/cam1/label_test'
