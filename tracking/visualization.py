@@ -3,6 +3,7 @@
 
 import os, numpy as np, sys, cv2
 from PIL import Image
+sys.path.append('/home/ubuntu/xwp/Xinshuo_pyToolbox')
 from xinshuo_io import is_path_exists, mkdir_if_missing, load_list_from_folder, fileparts
 from xinshuo_visualization import random_colors
 from AB3DMOT_libs.kitti_utils import read_label, compute_box_3d, draw_projected_box3d, Calibration
@@ -32,16 +33,22 @@ def vis(result_sha, data_root, result_root):
 		img.save(save_path)
 	
 	for seq in seq_list:
-		image_dir = os.path.join(data_root, 'image_02/%s' % seq)
-		calib_file = os.path.join(data_root, 'calib/%s.txt' % seq)
-		result_dir = os.path.join(result_root, '%s/trk_withid/%s' % (result_sha, seq))
-		save_3d_bbox_dir = os.path.join(result_dir, '../../trk_image_vis/%s' % seq); mkdir_if_missing(save_3d_bbox_dir)
+		#image_dir = os.path.join(data_root, 'image_02/%s' % seq)
+		#calib_file = os.path.join(data_root, 'calib/%s.txt' % seq)
+		#result_dir = os.path.join(result_root, '%s/trk_withid/%s' % (result_sha, seq))
+		#save_3d_bbox_dir = os.path.join(result_dir, '../../trk_image_vis/%s' % seq); mkdir_if_missing(save_3d_bbox_dir)
+		image_dir = '/home/ubuntu/xwp/datasets/multi_view_dataset/new/cam_sample/image_2'
+		result_dir = '/home/ubuntu/xwp/datasets/multi_view_dataset/new/fuse_test/cam9+cam21/tracking_results/trk_withid/0000'
+		calib_file = '/home/ubuntu/xwp/datasets/multi_view_dataset/346/calib/000000.txt'
+		save_3d_bbox_dir = '/home/ubuntu/xwp/datasets/multi_view_dataset/new/fuse_test/cam9+cam21/trk_image_vis'
+		mkdir_if_missing(save_3d_bbox_dir)
 
 		# load the list
 		images_list, num_images = load_list_from_folder(image_dir)
 		print('number of images to visualize is %d' % num_images)
-		start_count = 0
-		for count in range(start_count, num_images):
+		start_count = 8945
+		end_count = 8950
+		for count in range(start_count, 2950):
 			image_tmp = images_list[count]
 			if not is_path_exists(image_tmp): 
 				count += 1
@@ -71,16 +78,16 @@ def vis(result_sha, data_root, result_root):
 			count += 1
 
 if __name__ == "__main__":
-	if len(sys.argv) != 2:
-		print('Usage: python visualization.py result_sha(e.g., pointrcnn_Car_test_thres)')
-		sys.exit(1)
+	# if len(sys.argv) != 2:
+	# 	print('Usage: python visualization.py result_sha(e.g., pointrcnn_Car_test_thres)')
+	# 	sys.exit(1)
 
-	result_root = './results'
-	result_sha = sys.argv[1]
-	if 'val' in result_sha: data_root = './data/KITTI/resources/training'
-	elif 'test' in result_sha: data_root = './data/KITTI/resources/testing'
-	else:
-		print("wrong split!")
-		sys.exit(1)
+	# result_root = './results'
+	# result_sha = sys.argv[1]
+	# if 'val' in result_sha: data_root = './data/KITTI/resources/training'
+	# elif 'test' in result_sha: data_root = './data/KITTI/resources/testing'
+	# else:
+	# 	print("wrong split!")
+	# 	sys.exit(1)
 
 	vis(result_sha, data_root, result_root)
