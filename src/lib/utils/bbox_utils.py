@@ -5,7 +5,7 @@ import numpy as np, copy
 from numba import jit
 from scipy.spatial import ConvexHull
 from scipy.optimize import linear_sum_assignment
-from utils import CamVehicle
+from carla_ros.utils import CamVehicle
 import random
 
 #@jit          

@@ -32,7 +32,8 @@ if __name__ == '__main__':
     dataset_path = '/home/ubuntu/xwp/datasets/multi_view_dataset/new' #数据集根目录
     gt_global_label_dir = '/home/ubuntu/xwp/datasets/multi_view_dataset/new/global_label_new' #全部gt的世界坐标label文件夹
     camset_path = [ os.path.join(dataset_path,"cam{}".format(cam_num),'label_test_trans') for cam_num in range(1,35)] #每一个相机的test txt文件夹
-    gtset_path = [ os.path.join(dataset_path,"cam{}".format(cam_num),'global_filtered') for cam_num in range(1,35)] #每一个相机的test txt文件夹
+    #gtset_path = [ os.path.join(dataset_path,"cam{}".format(cam_num),'global_filtered') for cam_num in range(1,35)] #每一个相机的test txt文件夹
+    gtset_path = [os.path.join(dataset_path,'global_label_new')]
 
     cam_test_list = [] #所有相机单独检测的世界坐标 len=34,len(cam_test_list[0])=100 type(cam_test_list[0]) =np.ndarray shape = N*9(score) / N*8(gt)
     cam_gt_list = []
@@ -85,7 +86,8 @@ if __name__ == '__main__':
         mAP_temp = Eval.my_evaluate(fused_data,fused_gt)
         return 1- mAP_temp
     
-    fused_gt = cu.filt_gt_labels_tuple(*cam_gt_list)
+    #fused_gt = cu.filt_gt_labels_tuple(*cam_gt_list)
+    fused_gt = cam_gt_list[0]
 
     def fuse_constellation(x):
         #根据x的维度进行融合
@@ -112,21 +114,23 @@ if __name__ == '__main__':
     
 
     filt_start_time1 = time.time()
-    # x0 = SA.get_new_constellation(np.array([0,1,2]))
-    # #x0 = np.array([3,23,27])
-    # #print(1-fuse_constellation(x0))
-    # sa = SA.SA_CO(func=fuse_constellation, x0=x0, T_max=1, T_min=0.1*(max(len(x0),5)-1), L=30*(len(x0)-1), max_stay_counter=10)
-    # best_x, best_y = sa.run()
-    # print('best_x:', best_x, 'best_y', 1-best_y)
+    #x0 = SA.get_new_constellation(np.array([0,1,2,3,4,5,6,7,8,9,10]))
+    x0 = np.arange(0,34)
+    x0 = np.array([0])
+    #print(1-fuse_constellation(x0))
+    sa = SA.SA_CO(func=fuse_constellation, x0=x0, T_max=1, T_min=0.1*(max(len(x0),5)-1), L=40, max_stay_counter=10)
+    #sa = SA.SA_CO(func=fuse_constellation, x0=x0, T_max=1, T_min=0.1*(min(len(x0),5)-1), L=100, max_stay_counter=10)
+    best_x, best_y = sa.run()
+    print('best_x:', best_x, 'best_y', 1-best_y)
 
-    for i in range(2,34):
-        filt_start_time = time.time()
-        x0 = SA.get_new_constellation(np.arange(0,i))
-        sa = SA.SA_CO(func=fuse_constellation, x0=x0, T_max=1, T_min=0.1*(min(len(x0),6)-1), L=50*(len(x0)-1), max_stay_counter=5)
-        best_x, best_y = sa.run()
-        print('best_x:', best_x, 'best_y', 1-best_y)
-        filt_time = time.time() - filt_start_time
-        print('finished!,used {} s'.format(filt_time))
+    # for i in range(2,34):
+    #     filt_start_time = time.time()
+    #     x0 = SA.get_new_constellation(np.arange(0,i))
+    #     sa = SA.SA_CO(func=fuse_constellation, x0=x0, T_max=1, T_min=0.1*(min(len(x0),6)-1), L=50*(len(x0)-1), max_stay_counter=5)
+    #     best_x, best_y = sa.run()
+    #     print('best_x:', best_x, 'best_y', 1-best_y)
+    #     filt_time = time.time() - filt_start_time
+    #     print('finished!,used {} s'.format(filt_time))
 
     
     # filt_start_time = time.time()
