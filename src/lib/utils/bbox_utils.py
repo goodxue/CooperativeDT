@@ -75,6 +75,9 @@ def polygon_clip(subjectPolygon, clipPolygon):
 		cp1 = cp2
 		if len(outputList) == 0: return None
 	return (outputList)
+def vehicle_mean_fusion(v1,v2):
+	return CamVehicle((v1.x+v2.x)/2,(v1.y+v2.y)/2,(v1.z+v2.z)/2,(v1.height+v2.height)/2,(v1.width+v2.width)/2,(v1.length+v2.length)/2,(v1.rotation_y+v2.rotation_y)/2,cid=v1.id,score=(v1.score+v2.score)/2)
+
 
 def box3d_matching(box3d1,box3d2,iou_threshold=0.01,fusion=None):
 	'''
@@ -112,7 +115,7 @@ def box3d_matching(box3d1,box3d2,iou_threshold=0.01,fusion=None):
 
 	return ret + unmatched1 + unmatched2
 
-def vehicle3d_matching(v1,v2,iou_threshold=0.01,fusion=None):
+def vehicle3d_matching(v1,v2,iou_threshold=0.01,fusion=vehicle_mean_fusion):
 	'''
 	Input:
 		box3d1: Nx8x3
@@ -152,8 +155,6 @@ def vehicle3d_matching(v1,v2,iou_threshold=0.01,fusion=None):
 def box_mean_fusion(box3d1,box3d2):
 	return (box3d1+box3d2)/2
 
-def vehicle_mean_fusion(v1,v2):
-	return CamVehicle((v1.x+v2.x)/2,(v1.y+v2.y)/2,(v1.z+v2.z)/2,(v1.height+v2.height)/2,(v1.width+v2.width)/2,(v1.length+v2.length)/2,(v1.rotation_y+v2.rotation_y)/2,cid=v1.id,score=(v1.score+v2.score)/2)
 
 def box3d_matching_index(box3d1,box3d2,iou_threshold=0.01,fusion=None):
 	'''
