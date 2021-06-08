@@ -5,6 +5,7 @@ import json
 import numpy as np
 #import fov_utils as fu
 from fov_utils import FOV, _polygon_contains_point
+import matplotlib.pyplot as plt
 
 class Rotation(object):
     def __init__(self,yaw=0,roll=0,pitch=0):
@@ -167,6 +168,29 @@ def filt_gt_labels_tuple(*gt_list_tuple):
         ret = ret_temp
     return ret
 
+def matching_and_fusion_tuple(*pred_list_tuple,fusion_fuction=None):
+    if len(pred_list_tuple) == 0:
+        raise RuntimeError("input should be more than 1!")
+
+    ret = pred_list_tuple[0]
+    for pred_list in pred_list_tuple[1:]:
+        ret_temp = []
+        for ind,(pred1,pred2) in enumerate(zip(ret,pred_list)):
+            all_pred = np.vstack((pred1,pred2))
+            #ret_temp.append(all_gt[np.unique(all_gt[:,7].astype(np.int),return_index=True)[1]]) #去重
+            ret_temp.append(all_pred.astype(np.float))
+
+        ret = ret_temp
+
+        
+
+        # data = np.stack([X[1][:,0],X[1][:,1]]).transpose()
+        # y_pred = DBSCAN(eps = 1.6,min_samples=1).fit_predict(data)
+
+
+
+    return ret
+
 def fov_match_and_fusion(pred1,pred2,point1,point2,trust_first=True,fusion_fuction=None):
     ret = []
     fov = FOV(point1).caculate_iou(FOV(point2))
@@ -187,3 +211,29 @@ def fov_match_and_fusion(pred1,pred2,point1,point2,trust_first=True,fusion_fucti
         #ret.append(unmatched)
         #print(len(tmp))
     return ret
+
+#matched + unmatched in fov 和 gt in fov进行评估
+def fov_match_and_fusion2(pred1,pred2,gt_label,point1,point2,trust_first=True,fusion_fuction=None):
+    ret = []
+    fov = FOV(point1).caculate_iou(FOV(point2))
+    for ind,(frame_det1,frame_det2) in enumerate(zip(pred1,pred2)):
+        trust_frame = frame_det1 if trust_first else frame_det2
+        matched, unmatched1, unmatched2 = match_pairs(frame_det1.astype(np.float), frame_det2.astype(np.float))
+        unmatched = np.vstack((unmatched1,unmatched2))
+        delete_index = []
+        #print(ind,':',len(unmatched))
+        for ind_un,car_point in enumerate(unmatched):
+            if _polygon_contains_point(fov,(car_point[0],car_point[1])):
+                if car_point.tolist() in trust_frame.tolist():
+                    continue
+                else:
+                    delete_index.append(ind_un)
+        tmp = np.delete(unmatched,obj=delete_index,axis=0)
+        ret.append(np.vstack((matched,tmp)))
+        #ret.append(unmatched)
+        #print(len(tmp))
+    return ret
+
+def mean_fusion(objs):
+    # objs: N x 8 (x,y,z,l,w,h,r,s)
+    return np.mean(objs,axis=0)
