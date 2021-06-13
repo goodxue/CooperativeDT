@@ -6,6 +6,7 @@ import argparse
 from detection_evaluation.nuscenes_eval_core import NuScenesEval
 from detection_evaluation.label_parser import LabelParser
 import co_utils as cu
+import json
 
 def parse_args():
     parser = argparse.ArgumentParser(description='arg parser')
@@ -28,12 +29,32 @@ if __name__ == '__main__':
     file_parsing = LabelParser(args.format)
     FUSE_NUM = 2
 
+    cam_transform = []
+    sensors_definition_file = '/home/ubuntu/xwp/CenterNet/carla_ros/dataset.json'
+    if not os.path.exists(sensors_definition_file):
+        raise RuntimeError(
+            "Could not read sensor-definition from {}".format(sensors_definition_file))
+    with open(sensors_definition_file) as handle:
+        json_actors = json.loads(handle.read())
+    global_sensors = []
+    metric_map = []
+    metric_ate = []
+    for actor in json_actors["objects"]:
+        global_sensors.append(actor)
+    for sensor_spec in global_sensors:
+        sensor_id = str(sensor_spec.pop("id"))
+        spawn_point = sensor_spec.pop("spawn_point")
+        point = cu.Transform(location=cu.Location(x=spawn_point.pop("x"), y=-spawn_point.pop("y"), z=spawn_point.pop("z")),
+                rotation=cu.Rotation(pitch=-spawn_point.pop("pitch", 0.0), yaw=-spawn_point.pop("yaw", 0.0), roll=spawn_point.pop("roll", 0.0)))
+        cam_transform.append(point)
+        metric_map.append(float(sensor_spec.pop("mAP")))
+        metric_ate.append(float(sensor_spec.pop("ATE")))
+
     pred_files_list = []
     dataset_path = '/home/ubuntu/xwp/datasets/multi_view_dataset/new' #数据集根目录
     gt_global_label_dir = '/home/ubuntu/xwp/datasets/multi_view_dataset/new/global_label_new' #全部gt的世界坐标label文件夹
     camset_path = [ os.path.join(dataset_path,"cam{}".format(cam_num),'label_test_trans') for cam_num in range(1,35)] #每一个相机的test txt文件夹
-    #gtset_path = [ os.path.join(dataset_path,"cam{}".format(cam_num),'global_filtered') for cam_num in range(1,35)] #每一个相机的test txt文件夹
-    gtset_path = [os.path.join(dataset_path,'global_label_new')]
+    gtset_path = [ os.path.join(dataset_path,"cam{}".format(cam_num),'global_filtered') for cam_num in range(1,35)] #每一个相机的test txt文件夹
 
     cam_test_list = [] #所有相机单独检测的世界坐标 len=34,len(cam_test_list[0])=100 type(cam_test_list[0]) =np.ndarray shape = N*9(score) / N*8(gt)
     cam_gt_list = []
@@ -85,59 +106,34 @@ if __name__ == '__main__':
         fused_gt = cu.filt_gt_labels_tuple(cam_gt_list[x[0]],cam_gt_list[x[1]])
         mAP_temp = Eval.my_evaluate(fused_data,fused_gt)
         return 1- mAP_temp
-    
-    #fused_gt = cu.filt_gt_labels_tuple(*cam_gt_list)
-    fused_gt = cam_gt_list[0]
-    from sklearn.cluster import DBSCAN
-    dbscan = DBSCAN(eps = 1.6,min_samples=1)
 
     def fuse_constellation(x):
         #根据x的维度进行融合
         x.sort()
         size_n = x.shape[0]
-        #fused_data = cam_test_list[x[0]]
-        #gt_list = []
-        #gt_list.append(cam_gt_list[main_cam])
-        new_cam_test = []
-        for i in x:
-            new_cam_test.append(cam_test_list[i])
-        fused_data = cu.matching_and_fusion_tuple(*new_cam_test,dbscan=dbscan)
-        # for i in x[1:]:
-        #     fused_data = cu.matching_and_fusion(fused_data,cam_test_list[i]) #融合
-            #gt_list.append(cam_gt_list[i])
-        #fused_gt = cu.filt_gt_labels_tuple(*gt_list)
+        main_cam = x[0]
+        gt_list = []
+        gt_list.append(cam_gt_list[main_cam])
+        for i in x[1:]:
+            fused_data = cu.matching_and_fusion(cam_test_list[main_cam],cam_test_list[i]) #融合
+            gt_list.append(cam_gt_list[i])
+        fused_gt = cu.filt_gt_labels_tuple(*gt_list)
         Eval = NuScenesEval('', '', args.format)
-        #print(fused_data == cam_test_list[x[0]])
         mAP_temp = Eval.my_evaluate(fused_data,fused_gt)
         return 1- mAP_temp
-    
-    # fused_data = cu.matching_and_fusion(cam_test_list[7],cam_test_list[23])
-    # fused_data = cu.matching_and_fusion(fused_data,cam_test_list[27])
-    # Eval = NuScenesEval('', '', args.format)
-    # mAP_temp = Eval.my_evaluate(fused_data,fused_gt)
-    # print(mAP_temp)
-    
-    
 
-    filt_start_time1 = time.time()
-    #x0 = SA.get_new_constellation(np.array([0,1,2,3,4,5,6,7,8,9,10]))
-    # x0 = np.arange(0,34)
-    # #x0 = np.array([0])
-    # print(1-fuse_constellation(x0))
-    # #sa = SA.SA_CO(func=fuse_constellation, x0=x0, T_max=1, T_min=0.1*(max(len(x0),5)-1), L=40, max_stay_counter=10)
-    # #sa = SA.SA_CO(func=fuse_constellation, x0=x0, T_max=1, T_min=0.1*(min(len(x0),5)-1), L=100, max_stay_counter=10)
+    filt_start_time = time.time()
+    matrix = cu.fov_matrix(cam_transform)
+    for i in range(0,34):
+        matrix[i][i] = 0
+    sl = matrix.flatten()
+    idx = np. argpartition(sl, -15)[-15:]
+    print(idx)
+    
+    # x0 = SA.get_new_constellation(np.array([0,1]))
+    # sa = SA.SA_CO(func=fuse_constellation, x0=x0, T_max=1, T_min=0.4, L=40, max_stay_counter=10)
     # best_x, best_y = sa.run()
     # print('best_x:', best_x, 'best_y', 1-best_y)
-
-    for i in range(9,28):
-        filt_start_time = time.time()
-        x0 = SA.get_new_constellation(np.arange(0,i))
-        sa = SA.SA_CO(func=fuse_constellation, x0=x0, T_max=1, T_min=0.1*(min(len(x0),6)-1), L=30*(min(len(x0),16)-1), max_stay_counter=5)
-        best_x, best_y = sa.run()
-        print('best_x:', best_x, 'best_y', 1-best_y)
-        filt_time = time.time() - filt_start_time
-        print('finished!,used {} s'.format(filt_time))
-
     
     # filt_start_time = time.time()
     # ret = cu.filt_gt_labels(cam_gt_list[0],cam_gt_list[1])
@@ -161,8 +157,8 @@ if __name__ == '__main__':
     #                 print('temp max mAP: {}..........   time: ##   i: {}   j: {}  k:{} '.format(max_map,i,j,k))
     #             #print(mAP_temp)
     
-    filt_time1 = time.time() - filt_start_time1
-    print('finished!,used {} s'.format(filt_time1))
+    filt_time = time.time() - filt_start_time
+    print('finished!,used {} s'.format(filt_time))
 
 
     

@@ -32,7 +32,7 @@ class NuScenesEval:
         # if gt_label_path[-1] is not "/":
         #     gt_label_path += "/"
         # Run
-        #self.time = time.time()
+        self.time = time.time()
         #self.evaluate(pred_label_path, gt_label_path, label_format)
 
     def evaluate(self, pred_path, gt_path, label_format):
@@ -251,6 +251,7 @@ class NuScenesEval:
         # print("\nDone!")
         # print("----------------------------------")
         ## Calculate
+        #print(self.classes)
         for single_class in self.classes:
             class_dict = self.results_dict[single_class]
             # print("Calculating metrics for {} class".format(single_class))

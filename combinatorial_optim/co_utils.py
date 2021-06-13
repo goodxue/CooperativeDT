@@ -168,26 +168,39 @@ def filt_gt_labels_tuple(*gt_list_tuple):
         ret = ret_temp
     return ret
 
-def matching_and_fusion_tuple(*pred_list_tuple,fusion_fuction=None):
+def matching_and_fusion_tuple(*pred_list_tuple,dbscan,fusion_fuction=None):
     if len(pred_list_tuple) == 0:
         raise RuntimeError("input should be more than 1!")
 
-    ret = pred_list_tuple[0]
+    concated_pred = pred_list_tuple[0]
     for pred_list in pred_list_tuple[1:]:
         ret_temp = []
-        for ind,(pred1,pred2) in enumerate(zip(ret,pred_list)):
+        for ind,(pred1,pred2) in enumerate(zip(concated_pred,pred_list)):
             all_pred = np.vstack((pred1,pred2))
             #ret_temp.append(all_gt[np.unique(all_gt[:,7].astype(np.int),return_index=True)[1]]) #去重
             ret_temp.append(all_pred.astype(np.float))
 
-        ret = ret_temp
+        concated_pred = ret_temp
+    # pred concation finished! use concated_pred.
+    ret = []
 
-        
+    for frame in concated_pred:
+        data = np.stack([frame[:,0],frame[:,1]]).transpose()
+        #result = DBSCAN(eps = 1.6,min_samples=1).fit(data)
+        result = dbscan.fit(data)
+        y_pred = result.labels_ #每个元素的标签，同一聚类下的元素标签相同
+        label_set = set(y_pred)
 
+        filtered_preds = np.empty((0, 8))
+        for lb in label_set:
+            filter_n = np.asarray([lb])
+            objs_in_cluster = frame[np.in1d(y_pred, filter_n)]
+            filtered_obj = mean_fusion(objs_in_cluster)
+            filtered_preds = np.vstack((filtered_preds, filtered_obj))
+
+        ret.append(filtered_preds)
         # data = np.stack([X[1][:,0],X[1][:,1]]).transpose()
         # y_pred = DBSCAN(eps = 1.6,min_samples=1).fit_predict(data)
-
-
 
     return ret
 
@@ -213,27 +226,63 @@ def fov_match_and_fusion(pred1,pred2,point1,point2,trust_first=True,fusion_fucti
     return ret
 
 #matched + unmatched in fov 和 gt in fov进行评估
-def fov_match_and_fusion2(pred1,pred2,gt_label,point1,point2,trust_first=True,fusion_fuction=None):
+def fov_match_and_fusion2(pred1,pred2,gt_label,point1,point2,trust_first=True,fusion_fuction=None,args=None):
+    from detection_evaluation.nuscenes_eval_core import NuScenesEval
     ret = []
-    fov = FOV(point1).caculate_iou(FOV(point2))
-    for ind,(frame_det1,frame_det2) in enumerate(zip(pred1,pred2)):
+    pr1 = []
+    pr2 = []
+    gt = []
+    fov,_ = FOV(point1).caculate_iou(FOV(point2))
+    for ind,(frame_det1,frame_det2,frame_gt) in enumerate(zip(pred1,pred2,gt_label)):
         trust_frame = frame_det1 if trust_first else frame_det2
-        matched, unmatched1, unmatched2 = match_pairs(frame_det1.astype(np.float), frame_det2.astype(np.float))
-        unmatched = np.vstack((unmatched1,unmatched2))
-        delete_index = []
-        #print(ind,':',len(unmatched))
-        for ind_un,car_point in enumerate(unmatched):
+        fov_det1 = np.empty((0, 8))
+        fov_det2 = np.empty((0, 8))
+        fov_gt = np.empty((0, 8))
+        for ind_un,car_point in enumerate(frame_det1.astype(np.float)):
+            #print(car_point)
             if _polygon_contains_point(fov,(car_point[0],car_point[1])):
-                if car_point.tolist() in trust_frame.tolist():
-                    continue
-                else:
-                    delete_index.append(ind_un)
-        tmp = np.delete(unmatched,obj=delete_index,axis=0)
-        ret.append(np.vstack((matched,tmp)))
+                fov_det1 = np.vstack((fov_det1, car_point))
+        for ind_un,car_point in enumerate(frame_det2.astype(np.float)):
+            if _polygon_contains_point(fov,(car_point[0],car_point[1])):
+                fov_det2 = np.vstack((fov_det2, car_point))
+        for ind_un,car_point in enumerate(frame_gt.astype(np.float)):
+            if _polygon_contains_point(fov,(car_point[0],car_point[1])):
+                fov_gt = np.vstack((fov_gt, car_point))
+        
+
+        matched, unmatched1, unmatched2 = match_pairs(fov_det1.astype(np.float), fov_det2.astype(np.float))
+        #unmatched = np.vstack((unmatched1,unmatched2))
+        ret.append(np.vstack((matched,unmatched1,unmatched2)))
+        pr1.append(fov_det1)
+        pr2.append(fov_det2)
+        gt.append(fov_gt)
+        #delete_index = []
+        #print(ind,':',len(unmatched))
+        # for ind_un,car_point in enumerate(unmatched):
+        #     if _polygon_contains_point(fov,(car_point[0],car_point[1])):
+        #         if car_point.tolist() in trust_frame.tolist():
+        #             continue
+        #         else:
+        #             delete_index.append(ind_un)
+        #tmp = np.delete(unmatched,obj=delete_index,axis=0)
+        #ret.append(np.vstack((matched,tmp)))
         #ret.append(unmatched)
         #print(len(tmp))
-    return ret
+    Eval = NuScenesEval('', '', args.format)
+    mAP_temp = Eval.my_evaluate(ret,gt)
+    Eval = NuScenesEval('', '', args.format)
+    mAP_1 = Eval.my_evaluate(pr1,gt)
+    Eval = NuScenesEval('', '', args.format)
+    mAP_2 = Eval.my_evaluate(pr2,gt)
+    return mAP_temp,mAP_1,mAP_2
 
 def mean_fusion(objs):
     # objs: N x 8 (x,y,z,l,w,h,r,s)
     return np.mean(objs,axis=0)
+
+def fov_matrix(cam_transform_list):
+    fov_matrix = np.zeros((len(cam_transform_list), len(cam_transform_list)), dtype=np.float32)
+    for d, det in enumerate(cam_transform_list):
+        for t, trk in enumerate(cam_transform_list):
+            _,fov_matrix[d, t] =  FOV(det).caculate_iou(FOV(trk))
+    return fov_matrix

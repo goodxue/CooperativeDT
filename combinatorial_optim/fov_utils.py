@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import cv2
 
 class Edge:
     def __init__(self, point_a, point_b):
@@ -56,9 +57,12 @@ def _get_edge_intersection_points(polygon1, polygon2):
 
 
 def _polygon_contains_point(polygon, point):
+    # if len(polygon) != 4:
+    #     return False
     for i in range(len(polygon)):
         a = np.subtract(polygon[i], polygon[i-1])
         b = np.subtract(point, polygon[i-1])
+        #print(np.cross(a,b)," ",point," ",a,' p:::',polygon)
         if np.cross(a,b) < 0:
             return False
     return True
@@ -121,4 +125,4 @@ class FOV(object):
         #     plot_polygon(polygon3)
         #     print(cv2.contourArea(np.array(polygon3).reshape(-1,1,2).astype(np.int32))/cv2.contourArea(np.array(polygon1).reshape(-1,1,2).astype(np.int32)))
         # plt.show()
-        return polygon3
+        return polygon3,cv2.contourArea(np.array(polygon3).reshape(-1,1,2).astype(np.int32))

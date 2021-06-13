@@ -100,61 +100,96 @@ if __name__ == '__main__':
 
     #遍历融合
     
-    
     filt_start_time = time.time()
     fused_gt = cu.filt_gt_labels_tuple(*cam_gt_list)
     #ret = cu.filt_gt_labels(cam_gt_list[0],cam_gt_list[1])
     #filt_time = time.time() - filt_start_time
     #print("filt gt for 1 iter, time: ",filt_time)
     filt_start_time = time.time()
-    dbscan = DBSCAN(eps = 1.8,min_samples=1)
-    #cam_test_index = [2,3,6,7,8,20,23,27,31]
-    cam_test_index = [  0, 1,  2,  3,  4,  6,  7,  8,  9, 10, 12, 13, 14, 15, 16, 17, 19, 20, 21, 22, 23, 24, 25, 26,27,31,33]
-    new_cam_test = []
-    for i in cam_test_index:
-        new_cam_test.append(cam_test_list[i])
-
-    fused_test = cu.matching_and_fusion_tuple(*new_cam_test,dbscan=dbscan)
-    Eval = NuScenesEval('', '', args.format)
-    mAP_temp = Eval.my_evaluate(fused_test,fused_gt)
-    print(mAP_temp)
+    # dbscan = DBSCAN(eps = 1.6,min_samples=1)
+    # fused_test = cu.matching_and_fusion_tuple(*cam_test_list,dbscan=dbscan)
+    # Eval = NuScenesEval('', '', args.format)
+    # mAP_temp = Eval.my_evaluate(fused_test,fused_gt)
+    # print(mAP_temp)
 
 
+    def matching_and_fusion_tuple(*pred_list_tuple):
+        concated_pred = pred_list_tuple[0]
+        for pred_list in pred_list_tuple[1:]:
+            ret_temp = []
+            for ind,(pred1,pred2) in enumerate(zip(concated_pred,pred_list)):
+                all_pred = np.vstack((pred1,pred2))
+                #ret_temp.append(all_gt[np.unique(all_gt[:,7].astype(np.int),return_index=True)[1]]) #去重
+                ret_temp.append(all_pred.astype(np.float))
 
-    # X = cu.matching_and_fusion_tuple(*cam_test_list)
-    # data = np.stack([X[1][:,0],X[1][:,1]]).transpose()
-    # result = DBSCAN(eps = 1.6,min_samples=1).fit(data)
-    # y_pred = result.labels_ #每个元素的标签，同一聚类下的元素标签相同
-    # label_set = set(y_pred)
+            concated_pred = ret_temp
+        return concated_pred
+    
+    def fuse_constellation(x):
+        #根据x的维度进行融合
+        x.sort()
+        #size_n = x.shape[0]
+        fused_data = cam_test_list[x[0]]
+        #gt_list = []
+        #gt_list.append(cam_gt_list[main_cam])
+        for i in x[1:]:
+            fused_data = cu.matching_and_fusion(fused_data,cam_test_list[i]) #融合
+            #gt_list.append(cam_gt_list[i])
+        #fused_gt = cu.filt_gt_labels_tuple(*gt_list)
+        Eval = NuScenesEval('', '', args.format)
+        #print(fused_data == cam_test_list[x[0]])
+        mAP_temp = Eval.my_evaluate(fused_data,fused_gt)
+        return 1- mAP_temp, fused_data
+    
+    num_test = 3
 
+    X = matching_and_fusion_tuple(*cam_test_list)
+    mAP_fused, fused_data_ori = fuse_constellation(list(range(0,34)))
+    data = np.stack([X[num_test][:,0],X[num_test][:,1]]).transpose()
+    result = DBSCAN(eps = 1.8,min_samples=1).fit(data)
+    y_pred = result.labels_ #每个元素的标签，同一聚类下的元素标签相同
+    label_set = set(y_pred)
+
+    filtered_preds = np.empty((0, 8))
+    for lb in label_set:
+        filter_n = np.asarray([lb])
+        objs_in_cluster = X[num_test][np.in1d(y_pred, filter_n)]
+        filtered_obj = cu.mean_fusion(objs_in_cluster)
+        filtered_preds = np.vstack((filtered_preds, filtered_obj))
     # filtered_preds = np.empty((0, 8))
     # for lb in label_set:
     #     filter_n = np.asarray([lb])
-    #     objs_in_cluster = X[1][np.in1d(y_pred, filter_n)]
+    #     objs_in_cluster = X[num_test][np.in1d(y_pred, filter_n)]
     #     filtered_obj = cu.mean_fusion(objs_in_cluster)
     #     filtered_preds = np.vstack((filtered_preds, filtered_obj))
 
     #print(X[0][:,0:2])
-    #print(fused_gt[0][0,:])
+    print(len(fused_gt[num_test]))
     #print(y_pred)
     #print("gt_num: ",len(fused_gt[1]))
     #print(len(X[0]))
     #print(X[0][:,0].shape)
     #print(X[0].shape)
     #print(data.shape)
-    #print("cluster_num: ",len(label_set)-(1 if -1 in y_pred else 0))
+    cluster_num = len(label_set)-(1 if -1 in y_pred else 0)
+    print("cluster_num: ",cluster_num)
 
-    # Eval = NuScenesEval('', '', args.format)
-    # mAP_temp = Eval.my_evaluate([filtered_preds],[fused_gt[1]])
-    # print('Evaluation: ',mAP_temp)
+    Eval = NuScenesEval('', '', args.format)
+    mAP_temp = Eval.my_evaluate([filtered_preds],[fused_gt[num_test]])
+    print('Evaluation: ',mAP_temp)
+    Eval = NuScenesEval('', '', args.format)
+    mAP_ori = Eval.my_evaluate([X[num_test]],[fused_gt[num_test]])
 
     # fused_data = cu.matching_and_fusion(fused_data,cam_test_list[k])
     # Eval = NuScenesEval('', '', args.format)
     # mAP_temp = Eval.my_evaluate(fused_data[1],fused_gt[1])
     # print('Evaluation2: ',mAP_temp)
-
-    #plt.scatter(data[:,0], data[:,1], marker='o',c=y_pred)
-    #plt.show()
+    plt.title('pred_num:{} cluster_num:{}  mAP:{:.3f}'.format(len(data[:,0]),cluster_num,mAP_temp))
+    #plt.title('pred_num:{} gt_num:{} mAP:{:.3f}'.format(len(fused_data_ori[num_test][:,0]),len(fused_gt[num_test]),mAP_fused))
+    plt.scatter(data[:,0], data[:,1], marker='o',c=y_pred)
+    # plt.scatter(data[:,0], data[:,1], marker='o',c=data[:,1])
+    #plt.scatter(fused_data_ori[num_test][:,0], fused_data_ori[num_test][:,1], marker='o',c=fused_data_ori[num_test][:,1])
+    plt.show()
     max_map = 0
     max_i,max_j = 0,0
     # for i in range(34):
